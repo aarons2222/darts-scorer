@@ -46,67 +46,100 @@ body {
   h3 { font-size: 1.5rem; line-height: 2rem; }
 }
 
-@layer components {
-  .darts-bg {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    min-height: 100vh;
-  }
-  
-  .score-display {
-    font-family: 'JetBrains Mono', monospace;
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-    letter-spacing: -0.05em;
-  }
-  
-  .glass-effect {
-    backdrop-filter: blur(10px);
-    background: rgba(148, 163, 184, 0.05);
-    border: 1px solid rgba(148, 163, 184, 0.1);
-  }
-  
-  .glow-green {
-    box-shadow: 0 0 15px rgba(var(--glow-rgb), 0.3);
-  }
-  
-  .glow-green-lg {
-    box-shadow: 0 0 30px rgba(var(--glow-rgb), 0.4);
-  }
-  
-  .text-glow {
-    text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
-  }
-  
-  .button-primary {
-    @apply bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400;
-    @apply text-white font-semibold py-3 px-6 rounded-xl;
-    @apply shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40;
-    @apply transform hover:scale-[1.02] active:scale-[0.98];
-    @apply transition-all duration-200 ease-out;
-  }
-  
-  .button-secondary {
-    @apply bg-slate-700/50 hover:bg-slate-600/50 backdrop-blur-sm;
-    @apply text-slate-200 font-medium py-3 px-6 rounded-xl;
-    @apply border border-slate-600/30 hover:border-slate-500/50;
-    @apply transform hover:scale-[1.02] active:scale-[0.98];
-    @apply transition-all duration-200 ease-out;
-  }
-  
-  .scoreboard-card {
-    @apply bg-gradient-to-br from-slate-800/50 to-slate-900/50;
-    @apply border border-slate-600/30 rounded-2xl p-6;
-    @apply backdrop-blur-sm shadow-xl;
-    @apply transition-all duration-300 ease-out;
-  }
-  
-  .scoreboard-card.active {
-    @apply border-emerald-500/50 bg-emerald-500/5 shadow-emerald-500/10 shadow-2xl;
-  }
-  
-  .scoreboard-card.winner {
-    @apply border-yellow-500/50 bg-yellow-500/5 shadow-yellow-500/10 shadow-2xl;
-  }
+/* Custom darts theme components */
+.darts-bg {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  min-height: 100vh;
+}
+
+.score-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.05em;
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.glow-green {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+.glow-green-lg {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.button-primary {
+  background: linear-gradient(135deg, rgb(5, 150, 105), rgb(16, 185, 129));
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: scale(1);
+  transition: all 0.2s ease-out;
+}
+
+.button-primary:hover {
+  background: linear-gradient(135deg, rgb(16, 185, 129), rgb(52, 211, 153));
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.button-primary:active {
+  transform: scale(0.98);
+}
+
+.button-secondary {
+  background: rgba(51, 65, 85, 0.5);
+  color: rgb(226, 232, 240);
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  backdrop-filter: blur(4px);
+  transform: scale(1);
+  transition: all 0.2s ease-out;
+}
+
+.button-secondary:hover {
+  background: rgba(71, 85, 105, 0.5);
+  border-color: rgba(100, 116, 139, 0.5);
+  transform: scale(1.02);
+}
+
+.button-secondary:active {
+  transform: scale(0.98);
+}
+
+.scoreboard-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.5));
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease-out;
+}
+
+.scoreboard-card.active {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(30, 41, 59, 0.5));
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.scoreboard-card.winner {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(30, 41, 59, 0.5));
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 @layer utilities {
