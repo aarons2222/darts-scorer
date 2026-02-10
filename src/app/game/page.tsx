@@ -6,7 +6,6 @@ import { AlertTriangle, Home, SkipForward } from 'lucide-react';
 
 import { useGame } from '@/hooks/useGame';
 import { Scoreboard } from '@/components/ui/Scoreboard';
-import { ScoreInput } from '@/components/ui/ScoreInput';
 import { LoadingSpinner, FullPageLoader } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/utils/cn';
 
@@ -238,7 +237,7 @@ export default function GamePage() {
           </button>
         </motion.div>
 
-        {/* Scoreboard */}
+        {/* Scoreboard with Integrated Score Input */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -250,6 +249,9 @@ export default function GamePage() {
             currentPlayerIndex={game.currentPlayerIndex}
             legWins={game.legWins}
             setWins={game.setWins}
+            onSubmit={game.submitScore}
+            disabled={game.isSubmittingScore || isMatchWon}
+            isSubmitting={game.isSubmittingScore}
             className="mb-8"
           />
         </motion.div>
@@ -288,22 +290,7 @@ export default function GamePage() {
           )}
         </AnimatePresence>
 
-        {/* Score Input */}
-        {!legWinner && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <ScoreInput
-              onSubmit={game.submitScore}
-              disabled={game.isSubmittingScore || isMatchWon}
-              isSubmitting={game.isSubmittingScore}
-              currentPlayer={game.currentPlayer}
-              className="max-w-lg mx-auto"
-            />
-          </motion.div>
-        )}
+        {/* Score input is now integrated into the Scoreboard component */}
 
         {/* Error message */}
         <AnimatePresence>
