@@ -183,6 +183,29 @@ body {
   }
 }
 
+/* Professional TV broadcast styling */
+.tv-scoreboard {
+  font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tv-score-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 900;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.tv-glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 40px rgba(239, 68, 68, 0.4);
+}
+
+.tv-glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.4);
+}
+
 /* Animations for special effects */
 @keyframes dart-throw {
   0% { transform: translateX(-100px) rotateZ(-45deg) scale(0.5); opacity: 0; }
@@ -201,6 +224,15 @@ body {
 @keyframes checkout-flash {
   0%, 100% { background-color: rgba(16, 185, 129, 0.1); }
   50% { background-color: rgba(16, 185, 129, 0.3); }
+}
+
+@keyframes tv-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.8);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
 }
 
 .dart-throw {
