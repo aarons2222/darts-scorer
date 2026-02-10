@@ -57,6 +57,7 @@ export function ScoreInput({
       const timer = setTimeout(() => setInput(''), 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isSubmitting, input, error]);
 
   // Clear error after a few seconds
@@ -65,6 +66,7 @@ export function ScoreInput({
       const timer = setTimeout(() => setError(null), 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [error]);
 
   const handleInput = useCallback((value: string) => {

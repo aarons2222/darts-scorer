@@ -1,386 +1,351 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { GameMatch, GameLeg, GamePlayer } from '@/types/game';
-import { DbMatch } from '@/types/database';
-import { 
-  getCurrentMatch, 
-  convertDbMatchToGameMatch, 
-  addThrow, 
-  completeLeg, 
-  updateMatchStatus, 
-  createLeg,
-  getMatch
-} from '@/utils/database';
-import { isBust, isValidScore, getCheckoutSuggestions, isCheckoutAttempt } from '@/utils/gameLogic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Home, SkipForward } from 'lucide-react';
 
-export default function GamePage() {
+import { useGame } from '@/hooks/useGame';
+import { Scoreboard } from '@/components/ui/Scoreboard';
+import { ScoreInput } from '@/components/ui/ScoreInput';
+import { LoadingSpinner, FullPageLoader } from '@/components/ui/LoadingSpinner';
+import { cn } from '@/utils/cn';
+
+function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   const router = useRouter();
-  const [match, setMatch] = useState<GameMatch | null>(null);
-  const [dbMatch, setDbMatch] = useState<DbMatch | null>(null);
-  const [scoreInput, setScoreInput] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCurrentMatch();
-  }, []);
-
-  const loadCurrentMatch = async () => {
-    try {
-      const currentMatch = await getCurrentMatch();
-      if (!currentMatch) {
-        router.push('/setup');
-        return;
-      }
-      
-      setDbMatch(currentMatch);
-      setMatch(convertDbMatchToGameMatch(currentMatch));
-    } catch (error) {
-      console.error('Failed to load match:', error);
-      router.push('/');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshMatch = async () => {
-    if (!dbMatch) return;
-    
-    try {
-      const updatedMatch = await getMatch(dbMatch.id);
-      if (updatedMatch) {
-        setDbMatch(updatedMatch);
-        setMatch(convertDbMatchToGameMatch(updatedMatch));
-      }
-    } catch (error) {
-      console.error('Failed to refresh match:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-darts-green border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Loading match...</p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <motion.div
+        className="bg-red-500/10 border border-red-500/30 rounded-xl p-8 max-w-md w-full text-center"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+      >
+        <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-red-400 mb-2">Game Error</h2>
+        <p className="text-red-300 mb-6 text-sm">{error}</p>
+        
+        <div className="flex gap-3">
+          <button
+            onClick={onRetry}
+            className="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+          >
+            Home
+          </button>
         </div>
-      </div>
-    );
-  }
+      </motion.div>
+    </div>
+  );
+}
 
-  if (!match || !dbMatch) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
-        <div className="text-white text-center">
-          <p>No active match found</p>
-          <button 
+function NoMatchState() {
+  const router = useRouter();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <motion.div
+        className="text-center max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="text-6xl mb-6">🎯</div>
+        <h2 className="text-2xl font-bold text-white mb-4">No Active Match</h2>
+        <p className="text-slate-300 mb-8">
+          There's no match in progress. Start a new match to begin playing.
+        </p>
+        
+        <div className="flex gap-3">
+          <button
             onClick={() => router.push('/setup')}
-            className="mt-4 bg-darts-green hover:bg-green-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
           >
             Start New Match
           </button>
+          <button
+            onClick={() => router.push('/')}
+            className="bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+          >
+            <Home className="w-5 h-5" />
+          </button>
         </div>
-      </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function LegCompleteModal({ 
+  winner, 
+  onNextLeg, 
+  onViewStats,
+  isMatchWon = false 
+}: { 
+  winner: string; 
+  onNextLeg: () => void;
+  onViewStats: () => void;
+  isMatchWon?: boolean;
+}) {
+  return (
+    <motion.div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-md w-full text-center"
+        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+      >
+        <motion.div
+          className="text-6xl mb-4"
+          animate={{ 
+            rotate: [0, -10, 10, -10, 0],
+            scale: [1, 1.2, 1, 1.2, 1]
+          }}
+          transition={{ 
+            duration: 1,
+            repeat: 2,
+            ease: "easeInOut"
+          }}
+        >
+          {isMatchWon ? '🏆' : '🎉'}
+        </motion.div>
+        
+        <h3 className="text-2xl font-bold text-emerald-400 mb-2">
+          {winner} Wins!
+        </h3>
+        
+        <p className="text-slate-300 mb-8">
+          {isMatchWon ? 'Match Complete!' : 'Leg Complete!'}
+        </p>
+
+        <div className="flex gap-3">
+          {!isMatchWon && (
+            <button
+              onClick={onNextLeg}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <SkipForward className="w-4 h-4" />
+              Next Leg
+            </button>
+          )}
+          
+          <button
+            onClick={onViewStats}
+            className={cn(
+              "bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-lg font-medium transition-colors",
+              isMatchWon ? "flex-1" : ""
+            )}
+          >
+            {isMatchWon ? 'View Match Stats' : 'View Stats'}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+export default function GamePage() {
+  const router = useRouter();
+  const game = useGame();
+
+  // Show loading state
+  if (game.isLoadingMatch) {
+    return <FullPageLoader message="Loading match..." />;
+  }
+
+  // Show error state
+  if (game.gameState === 'error' && game.error) {
+    return (
+      <ErrorState 
+        error={game.error} 
+        onRetry={() => window.location.reload()} 
+      />
     );
   }
 
-  const currentSet = match.sets[match.currentSetIndex];
-  if (!currentSet) {
-    return <div>Error: No current set found</div>;
-  }
-  
-  const currentLeg = currentSet.legs[match.currentLegIndex];
-  if (!currentLeg) {
-    return <div>Error: No current leg found</div>;
+  // Show no match state
+  if (game.gameState === 'no_match') {
+    return <NoMatchState />;
   }
 
-  const currentPlayer = currentLeg.players[currentLeg.currentPlayerIndex];
-  const isCheckoutPossible = isCheckoutAttempt(currentPlayer.currentScore);
+  // Ensure we have all required data
+  if (!game.match || !game.currentLeg || !game.currentPlayer) {
+    return <FullPageLoader message="Preparing game..." />;
+  }
 
-  const addScore = async (score: number) => {
-    if (!isValidScore(score)) {
-      alert('Invalid score');
-      return;
-    }
-
-    try {
-      const wasCheckoutAttempt = isCheckoutAttempt(currentPlayer.currentScore);
-      
-      if (isBust(currentPlayer.currentScore, score)) {
-        alert('BUST! Score remains unchanged.');
-        // Still record the throw but don't change score
-        await addThrow(currentLeg.id, currentPlayer.id, currentLeg.currentRound, score, false);
-      } else {
-        const newScore = currentPlayer.currentScore - score;
-        const isCheckout = newScore === 0;
-        
-        // Add throw to database
-        await addThrow(currentLeg.id, currentPlayer.id, currentLeg.currentRound, score, isCheckout);
-        
-        if (isCheckout) {
-          // Player finished - complete the leg
-          await completeLeg(currentLeg.id, currentPlayer.id);
-          
-          // Check if match is won
-          await checkMatchComplete();
-        }
-      }
-
-      // Refresh the match data
-      await refreshMatch();
-      setScoreInput('');
-    } catch (error) {
-      console.error('Failed to add score:', error);
-      alert('Failed to record score. Please try again.');
+  const handleQuitMatch = async () => {
+    if (confirm('Are you sure you want to quit this match? Progress will be saved.')) {
+      await game.quitMatch();
+      router.push('/');
     }
   };
 
-  const checkMatchComplete = async () => {
-    if (!dbMatch) return;
-
-    // This is a simplified version - you'd need more complex logic for sets
-    const config = dbMatch.config;
-    
-    // For now, just check if we have enough legs for the first player who won this leg
-    // In a real implementation, you'd need to count legs per set, sets per match, etc.
-    
-    // For simplicity, let's just mark as completed when someone wins
-    // You can implement proper set/leg logic later
-    await updateMatchStatus(dbMatch.id, 'completed', currentPlayer.id);
-    
-    // Navigate to match results
-    router.push(`/history/${dbMatch.id}`);
-  };
-
-  const handleScoreSubmit = () => {
-    const score = parseInt(scoreInput);
-    if (!isNaN(score) && score >= 0) {
-      addScore(score);
+  const handleNextLeg = async () => {
+    const success = await game.startNextLeg();
+    if (!success) {
+      // Handle error - maybe show a toast
+      console.error('Failed to start next leg');
     }
   };
 
-  const quitMatch = async () => {
-    if (confirm('Are you sure you want to quit this match?')) {
-      try {
-        if (dbMatch) {
-          await updateMatchStatus(dbMatch.id, 'completed');
-        }
-        router.push('/');
-      } catch (error) {
-        console.error('Failed to quit match:', error);
-        router.push('/');
-      }
+  const handleViewStats = () => {
+    if (game.match) {
+      router.push(`/history/${game.match.id}`);
     }
   };
 
-  const getMatchStatus = () => {
-    if (match.config.numberOfSets) {
-      return `Set ${currentLeg.setNumber}, Leg ${currentLeg.legNumber}`;
-    } else {
-      return `Leg ${currentLeg.legNumber}`;
-    }
-  };
+  const legWinner = game.currentLeg?.winnerId 
+    ? game.match.config.players.find(p => p.id === game.currentLeg?.winnerId)
+    : null;
 
-  const getLegScores = () => {
-    const legWins: Record<string, number> = {};
-    match.config.players.forEach(p => {
-      legWins[p.id] = 0;
-      match.sets.forEach(set => {
-        legWins[p.id] += set.legs.filter(leg => leg.winnerId === p.id).length;
-      });
-    });
-    return legWins;
-  };
-
-  const legScores = getLegScores();
-  const checkoutSuggestions = isCheckoutPossible ? getCheckoutSuggestions(currentPlayer.currentScore) : [];
+  const isMatchWon = game.gameState === 'match_won';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent">
-      <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-1">🎯 {getMatchStatus()}</h1>
-          <p className="text-gray-300 text-sm">{match.config.players.map(p => p.name).join(' vs ')}</p>
-        </div>
-
-        {/* Leg Scores */}
-        <div className="bg-white/10 rounded-lg p-3 mb-4 backdrop-blur-sm">
-          <h3 className="text-white text-sm font-medium mb-2 text-center">Legs Won</h3>
-          <div className="flex justify-around">
-            {match.config.players.map(player => (
-              <div key={player.id} className="text-center">
-                <div className="text-white text-xl font-bold">{legScores[player.id]}</div>
-                <div className="text-gray-300 text-xs">{player.name}</div>
-              </div>
-            ))}
+        <motion.div 
+          className="flex items-center justify-between mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <button
+            onClick={() => router.push('/')}
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            <Home className="w-6 h-6" />
+          </button>
+          
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-white">Live Match</h1>
+            <div className="text-xs text-slate-400">
+              Round {Math.floor(game.currentPlayer.throws.length) + 1}
+            </div>
           </div>
-        </div>
 
-        {/* Current Scores */}
-        <div className="grid grid-cols-1 gap-4 mb-6">
-          {currentLeg.players.map((player, index) => {
-            const playerThrows = player.throws;
-            const average = playerThrows.length > 0 
-              ? Math.round(((playerThrows.reduce((sum, t) => sum + t.score, 0) / playerThrows.length) * 3) * 10) / 10
-              : 0;
-            const highest = playerThrows.length > 0 
-              ? Math.max(...playerThrows.map(t => t.score))
-              : 0;
-            const scores180 = playerThrows.filter(t => t.score === 180).length;
+          <button
+            onClick={handleQuitMatch}
+            className="text-slate-400 hover:text-red-400 transition-colors text-sm font-medium"
+          >
+            Quit
+          </button>
+        </motion.div>
 
-            return (
-              <div
-                key={player.id}
-                className={`p-4 rounded-xl border-2 transition-all duration-300 ${
-                  index === currentLeg.currentPlayerIndex && !currentLeg.isCompleted
-                    ? 'border-darts-green bg-darts-green/20 shadow-lg shadow-darts-green/25'
-                    : player.isFinished
-                    ? 'border-green-400 bg-green-400/20'
-                    : 'border-white/20 bg-white/5'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-white text-lg font-semibold flex items-center">
-                      {player.name}
-                      {index === currentLeg.currentPlayerIndex && !currentLeg.isCompleted && (
-                        <span className="ml-2 text-xs bg-darts-green px-2 py-1 rounded-full">THROWING</span>
-                      )}
-                      {player.isFinished && (
-                        <span className="ml-2 text-xs bg-green-500 px-2 py-1 rounded-full">WINNER</span>
-                      )}
-                    </h3>
-                    <div className="text-gray-300 text-sm">
-                      Avg: {average} • High: {highest} • 180s: {scores180}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-3xl font-bold score-display ${
-                      player.currentScore === 0 ? 'text-green-400' : 'text-white'
-                    }`}>
-                      {player.currentScore}
-                    </div>
-                    {playerThrows.length > 0 && (
-                      <div className="text-gray-400 text-sm">
-                        Last: {playerThrows[playerThrows.length - 1].score}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Recent scores */}
-                {playerThrows.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-white/10">
-                    <div className="flex flex-wrap gap-1">
-                      {playerThrows.slice(-5).map((throwData, idx) => (
-                        <span
-                          key={idx}
-                          className={`text-xs px-2 py-1 rounded ${
-                            throwData.score >= 100 ? 'bg-yellow-600/30 text-yellow-200' :
-                            throwData.score >= 80 ? 'bg-blue-600/30 text-blue-200' :
-                            'bg-white/10 text-gray-300'
-                          }`}
-                        >
-                          {throwData.score}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* Scoreboard */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Scoreboard
+            match={game.match}
+            currentLeg={game.currentLeg}
+            currentPlayerIndex={game.currentPlayerIndex}
+            legWins={game.legWins}
+            setWins={game.setWins}
+            className="mb-8"
+          />
+        </motion.div>
 
         {/* Checkout Suggestions */}
-        {isCheckoutPossible && checkoutSuggestions.length > 0 && (
-          <div className="bg-yellow-600/20 border border-yellow-500/50 rounded-lg p-4 mb-4">
-            <h4 className="text-yellow-200 font-semibold mb-2 text-center">🎯 Checkout Available!</h4>
-            <div className="space-y-1">
-              {checkoutSuggestions.slice(0, 3).map((suggestion, idx) => (
-                <div key={idx} className="text-center">
-                  <span className="text-yellow-100 font-medium">{suggestion.combination}</span>
-                  <span className="text-yellow-300 text-sm ml-2">({suggestion.description})</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {game.isCheckoutPossible && game.checkoutSuggestions.length > 0 && (
+            <motion.div
+              className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <h4 className="text-yellow-200 font-bold text-center mb-3">
+                🎯 Checkout Available - {game.currentPlayer.currentScore}
+              </h4>
+              <div className="space-y-2">
+                {game.checkoutSuggestions.slice(0, 3).map((suggestion, idx) => (
+                  <motion.div
+                    key={idx}
+                    className="text-center"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <span className="text-yellow-100 font-mono font-bold">
+                      {suggestion.combination}
+                    </span>
+                    <span className="text-yellow-300 text-sm ml-2">
+                      ({suggestion.description})
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Score Input */}
-        {!currentLeg.isCompleted && (
-          <div className="bg-white/10 rounded-xl p-6 mb-6 backdrop-blur-sm">
-            <div className="text-center mb-4">
-              <h3 className="text-white text-lg font-semibold mb-1">
-                {currentPlayer.name}'s Turn
-              </h3>
-              <p className="text-gray-300 text-sm">Enter 3-dart total</p>
-            </div>
-
-            <div className="mb-4">
-              <input
-                type="number"
-                value={scoreInput}
-                onChange={(e) => setScoreInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleScoreSubmit()}
-                placeholder="Enter score (0-180)"
-                className="w-full text-center text-2xl bg-white/20 border border-white/30 rounded-lg px-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-darts-green focus:bg-white/30"
-                autoFocus
-              />
-            </div>
-
-            {/* Number pad */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <button
-                  key={num}
-                  onClick={() => setScoreInput(scoreInput + num.toString())}
-                  className="bg-white/20 hover:bg-white/30 text-white text-xl font-semibold py-3 rounded-lg transition-colors"
-                >
-                  {num}
-                </button>
-              ))}
-              <button
-                onClick={() => setScoreInput('')}
-                className="bg-darts-red/50 hover:bg-darts-red/70 text-white py-3 rounded-lg transition-colors"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => setScoreInput(scoreInput + '0')}
-                className="bg-white/20 hover:bg-white/30 text-white text-xl font-semibold py-3 rounded-lg transition-colors"
-              >
-                0
-              </button>
-              <button
-                onClick={() => setScoreInput(scoreInput.slice(0, -1))}
-                className="bg-white/10 hover:bg-white/20 text-white py-3 rounded-lg transition-colors"
-              >
-                ⌫
-              </button>
-            </div>
-
-            <button
-              onClick={handleScoreSubmit}
-              disabled={!scoreInput || parseInt(scoreInput) < 0 || parseInt(scoreInput) > 180}
-              className="w-full bg-darts-green hover:bg-green-400 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold text-lg transition-colors duration-200"
-            >
-              Submit Score
-            </button>
-          </div>
+        {!legWinner && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <ScoreInput
+              onSubmit={game.submitScore}
+              disabled={game.isSubmittingScore || isMatchWon}
+              isSubmitting={game.isSubmittingScore}
+              currentPlayer={game.currentPlayer}
+              className="max-w-lg mx-auto"
+            />
+          </motion.div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-4">
-          <button
-            onClick={quitMatch}
-            className="flex-1 bg-darts-red/50 hover:bg-darts-red/70 text-white py-3 rounded-lg font-medium transition-colors"
-          >
-            Quit Match
-          </button>
-        </div>
+        {/* Error message */}
+        <AnimatePresence>
+          {game.error && (
+            <motion.div
+              className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <p className="text-red-400 text-sm">{game.error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Loading overlay for score submission */}
+        <AnimatePresence>
+          {game.isSubmittingScore && (
+            <motion.div
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="bg-slate-800/90 rounded-lg p-6">
+                <LoadingSpinner message="Recording score..." />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Leg/Match Complete Modal */}
+        <AnimatePresence>
+          {(game.gameState === 'leg_won' || game.gameState === 'match_won') && legWinner && (
+            <LegCompleteModal
+              winner={legWinner.name}
+              onNextLeg={handleNextLeg}
+              onViewStats={handleViewStats}
+              isMatchWon={isMatchWon}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

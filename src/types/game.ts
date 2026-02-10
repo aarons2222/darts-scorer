@@ -37,7 +37,7 @@ export interface GameMatch {
   config: {
     numberOfSets?: number;
     numberOfLegs: number;
-    players: { id: string; name: string; startingScore: number }[];
+    players: Array<{ id: string; name: string; startingScore: number }>;
   };
   sets: GameSet[];
   currentSetIndex: number;
