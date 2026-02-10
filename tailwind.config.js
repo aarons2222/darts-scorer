@@ -8,13 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'darts-dark': '#0f172a',
-        'darts-navy': '#1e293b', 
-        'darts-accent': '#334155',
-        'darts-green': '#10b981',
-        'darts-red': '#ef4444',
-        'darts-yellow': '#f59e0b',
-        'darts-blue': '#3b82f6',
+        // Dartboard-inspired palette
+        'dartboard': {
+          'black': '#1a1a1a',
+          'cream': '#f5f5dc',
+          'green': '#1b5e20',
+          'red': '#c62828',
+          'wire': '#666666',
+        },
+        'darts': {
+          'background': '#2a2a2a',
+          'surface': '#3a3a3a',
+          'border': '#4a4a4a',
+        }
       },
       fontFamily: {
         'mono': ['JetBrains Mono', 'Consolas', 'monospace'],
@@ -28,8 +34,8 @@ module.exports = {
       },
       keyframes: {
         glow: {
-          'from': { boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)' },
-          'to': { boxShadow: '0 0 20px rgba(16, 185, 129, 0.8)' }
+          'from': { boxShadow: '0 0 4px rgba(198, 40, 40, 0.3)' },
+          'to': { boxShadow: '0 0 8px rgba(198, 40, 40, 0.6)' }
         },
         scorePop: {
           '0%': { transform: 'scale(1)' },
@@ -48,13 +54,12 @@ module.exports = {
         'xs': '2px',
       },
       boxShadow: {
-        'glow': '0 0 15px rgba(16, 185, 129, 0.3)',
-        'glow-lg': '0 0 30px rgba(16, 185, 129, 0.4)',
-        'inner-glow': 'inset 0 0 10px rgba(16, 185, 129, 0.2)',
+        'dartboard': '0 2px 4px rgba(0, 0, 0, 0.3)',
+        'dartboard-lg': '0 4px 8px rgba(0, 0, 0, 0.4)',
+        'score-active': '0 0 0 2px rgba(198, 40, 40, 0.5)',
       },
       backgroundImage: {
-        'darts-gradient': 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
-        'score-gradient': 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+        'dartboard-subtle': 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
       }
     },
   },

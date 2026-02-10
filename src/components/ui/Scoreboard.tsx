@@ -35,9 +35,9 @@ const NUMPAD_BUTTONS = [
   { value: '7', label: '7' },
   { value: '8', label: '8' },
   { value: '9', label: '9' },
-  { value: 'clear', label: 'Clear', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-200 border-red-500/30' },
+  { value: 'clear', label: 'CLR', className: 'numpad-button' },
   { value: '0', label: '0' },
-  { value: 'backspace', label: '⌫', className: 'bg-slate-500/20 hover:bg-slate-500/30 text-slate-200 border-slate-500/30' },
+  { value: 'backspace', label: '⌫', className: 'numpad-button' },
 ];
 
 function CircularScore({ 
@@ -49,10 +49,9 @@ function CircularScore({
   score: number; 
   player: GamePlayer;
   isActive: boolean; 
-  colorScheme: 'red' | 'blue' 
+  colorScheme: 'red' | 'green' 
 }) {
-  const ringColor = colorScheme === 'red' ? 'from-red-500 to-red-600' : 'from-blue-500 to-blue-600';
-  const glowColor = colorScheme === 'red' ? 'shadow-red-500/20' : 'shadow-blue-500/20';
+  const ringColor = colorScheme === 'red' ? 'border-dartboard-red bg-dartboard-red/10' : 'border-dartboard-green bg-dartboard-green/10';
 
   return (
     <div className="relative">
@@ -62,8 +61,8 @@ function CircularScore({
           <motion.div
             className={cn(
               "absolute -top-8 left-1/2 -translate-x-1/2",
-              "flex items-center gap-2 px-3 py-1 rounded-full",
-              "bg-white/90 text-gray-800 text-sm font-bold shadow-lg"
+              "flex items-center gap-2 px-3 py-1 rounded",
+              "bg-dartboard-cream/90 text-dartboard-black text-sm font-bold shadow-lg font-mono"
             )}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,17 +74,17 @@ function CircularScore({
         )}
       </AnimatePresence>
 
-      {/* Outer ring with gradient */}
+      {/* Outer ring */}
       <div className={cn(
         "w-40 h-40 md:w-48 md:h-48 rounded-full",
-        "bg-gradient-to-br", ringColor,
-        "p-2 shadow-lg", glowColor,
+        "border-4", ringColor,
+        "p-2 shadow-lg shadow-black/50",
         isActive && "animate-pulse"
       )}>
-        {/* Inner dark navy circle */}
-        <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center border-2 border-slate-700">
+        {/* Inner dark circle */}
+        <div className="w-full h-full bg-dartboard-black rounded-full flex items-center justify-center border-2 border-dartboard-wire">
           <motion.div 
-            className="text-white font-bold font-mono tabular-nums text-center"
+            className="text-dartboard-cream font-bold font-mono tabular-nums text-center"
             style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)' }}
             key={score}
             initial={{ scale: 1.2 }}
@@ -98,13 +97,13 @@ function CircularScore({
       </div>
 
       {/* Player stats below */}
-      <div className="text-center mt-4 text-white">
-        <div className="text-sm opacity-75">
+      <div className="text-center mt-4 text-dartboard-cream">
+        <div className="text-sm opacity-75 font-mono">
           Last: <span className="font-mono font-bold">
             {player.throws.length > 0 ? player.throws[player.throws.length - 1].score : '-'}
           </span>
         </div>
-        <div className="text-xs opacity-60">
+        <div className="text-xs opacity-60 font-mono">
           Avg: {player.throws.length > 0 
             ? ((player.throws.reduce((sum, t) => sum + t.score, 0) / player.throws.length) * 3).toFixed(1)
             : '-'
@@ -115,12 +114,12 @@ function CircularScore({
   );
 }
 
-function PlayerBanner({ name, colorScheme }: { name: string; colorScheme: 'red' | 'blue' }) {
-  const bgColor = colorScheme === 'red' ? 'bg-red-600' : 'bg-blue-600';
+function PlayerBanner({ name, colorScheme }: { name: string; colorScheme: 'red' | 'green' }) {
+  const bgColor = colorScheme === 'red' ? 'bg-dartboard-red' : 'bg-dartboard-green';
   
   return (
-    <div className={cn("text-center py-3 px-6 rounded-t-lg", bgColor)}>
-      <h2 className="text-white font-bold text-xl uppercase tracking-wider">
+    <div className={cn("text-center py-3 px-6", bgColor)}>
+      <h2 className="text-dartboard-cream font-bold text-xl uppercase tracking-wider font-mono">
         {name}
       </h2>
     </div>
@@ -141,26 +140,26 @@ function CenterPanel({
   const firstTo = hasMultipleSets ? Math.ceil((match.config.numberOfSets || 1) / 2) : Math.ceil(match.config.numberOfLegs / 2);
 
   return (
-    <div className="flex flex-col items-center justify-center text-white space-y-4">
+    <div className="flex flex-col items-center justify-center text-dartboard-cream space-y-4">
       {/* First To X label */}
       <div className="text-center">
-        <div className="text-lg font-bold uppercase tracking-wider">
-          First To {firstTo}
+        <div className="text-lg font-bold uppercase tracking-wider font-mono">
+          FIRST TO {firstTo}
         </div>
-        <div className="text-sm opacity-75">
-          {hasMultipleSets ? 'Sets' : 'Legs'}
+        <div className="text-sm opacity-75 font-mono">
+          {hasMultipleSets ? 'SETS' : 'LEGS'}
         </div>
       </div>
 
       {/* Sets row (if applicable) */}
       {hasMultipleSets && (
         <div className="text-center">
-          <div className="text-sm uppercase tracking-wide text-gray-300 mb-1">Sets</div>
+          <div className="text-sm uppercase tracking-wide text-dartboard-cream/70 mb-1 font-mono">SETS</div>
           <div className="flex items-center space-x-4">
             <div className="text-2xl font-bold font-mono tabular-nums">
               {setWins[players[0].id] || 0}
             </div>
-            <div className="text-lg text-gray-400">|</div>
+            <div className="text-lg text-dartboard-wire">|</div>
             <div className="text-2xl font-bold font-mono tabular-nums">
               {setWins[players[1].id] || 0}
             </div>
@@ -170,12 +169,12 @@ function CenterPanel({
 
       {/* Legs row */}
       <div className="text-center">
-        <div className="text-sm uppercase tracking-wide text-gray-300 mb-1">Legs</div>
+        <div className="text-sm uppercase tracking-wide text-dartboard-cream/70 mb-1 font-mono">LEGS</div>
         <div className="flex items-center space-x-4">
           <div className="text-3xl font-bold font-mono tabular-nums">
             {legWins[players[0].id] || 0}
           </div>
-          <div className="text-lg text-gray-400">|</div>
+          <div className="text-lg text-dartboard-wire">|</div>
           <div className="text-3xl font-bold font-mono tabular-nums">
             {legWins[players[1].id] || 0}
           </div>
@@ -304,11 +303,11 @@ function ScoreInput({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h3 className="text-xl font-bold text-white mb-1">
-            {currentPlayer.name}'s Turn
+          <h3 className="text-xl font-bold text-dartboard-cream mb-1 font-mono">
+            {currentPlayer.name.toUpperCase()}'S TURN
           </h3>
-          <p className="text-gray-300 text-sm">
-            Score remaining: <span className="font-mono text-lg">{currentPlayer.currentScore}</span>
+          <p className="text-dartboard-cream/70 text-sm">
+            Score remaining: <span className="font-mono text-lg text-dartboard-red">{currentPlayer.currentScore}</span>
           </p>
         </motion.div>
       )}
@@ -323,12 +322,12 @@ function ScoreInput({
             placeholder="Enter score"
             className={cn(
               "w-full text-center text-3xl font-mono font-bold",
-              "bg-slate-800/50 border-2 rounded-xl px-4 py-4",
-              "text-white placeholder-gray-400",
+              "bg-darts-surface border-3 rounded-lg px-4 py-4",
+              "text-dartboard-cream placeholder-dartboard-cream/40",
               "transition-all duration-200",
               isValidInput 
-                ? "border-emerald-500/50 focus:border-emerald-500" 
-                : "border-red-500/50 focus:border-red-500",
+                ? "border-dartboard-green focus:border-dartboard-green" 
+                : "border-dartboard-red focus:border-dartboard-red",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           />
@@ -341,8 +340,8 @@ function ScoreInput({
                   "absolute right-3 top-1/2 -translate-y-1/2",
                   "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
                   isValidInput 
-                    ? "bg-emerald-500 text-white" 
-                    : "bg-red-500 text-white"
+                    ? "bg-dartboard-green text-dartboard-cream" 
+                    : "bg-dartboard-red text-dartboard-cream"
                 )}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -358,7 +357,7 @@ function ScoreInput({
         <AnimatePresence>
           {error && (
             <motion.p
-              className="text-red-400 text-sm mt-2 text-center"
+              className="text-dartboard-red text-sm mt-2 text-center font-mono"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -374,16 +373,16 @@ function ScoreInput({
         <button
           onClick={() => setShowQuickScores(!showQuickScores)}
           className={cn(
-            "text-sm px-3 py-1 rounded-full transition-colors",
-            "bg-slate-700/50 hover:bg-slate-600/50 text-slate-300"
+            "text-sm px-3 py-1 rounded transition-colors font-mono",
+            "bg-darts-surface hover:bg-darts-border text-dartboard-cream border border-darts-border"
           )}
           disabled={disabled}
         >
-          {showQuickScores ? 'Hide' : 'Show'} Quick Scores
+          {showQuickScores ? 'HIDE' : 'SHOW'} QUICK SCORES
         </button>
         
         {input && (
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-dartboard-cream/60 font-mono">
             {currentScore} / {maxScore}
           </div>
         )}
@@ -403,9 +402,9 @@ function ScoreInput({
                 key={score}
                 onClick={() => handleQuickScore(score)}
                 className={cn(
-                  "py-2 px-1 text-xs font-medium rounded-lg",
-                  "bg-blue-500/20 hover:bg-blue-500/30 text-blue-200",
-                  "transition-colors duration-150 border border-blue-500/30",
+                  "py-2 px-1 text-xs font-bold rounded border-2",
+                  "bg-dartboard-green hover:bg-green-700 text-dartboard-cream border-green-800",
+                  "transition-colors duration-150 font-mono",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
                 disabled={disabled}
@@ -426,12 +425,8 @@ function ScoreInput({
             key={button.value}
             onClick={() => handleInput(button.value)}
             className={cn(
-              "py-3 text-lg font-bold rounded-lg",
-              "bg-slate-700/50 hover:bg-slate-600/50 text-white",
-              "border border-slate-600/30",
-              "transition-colors duration-150",
+              "numpad-button",
               "disabled:opacity-50 disabled:cursor-not-allowed",
-              "active:scale-95 transform",
               button.className
             )}
             disabled={disabled}
@@ -448,11 +443,11 @@ function ScoreInput({
         onClick={handleSubmit}
         disabled={!canSubmit}
         className={cn(
-          "w-full py-3 text-lg font-bold rounded-lg",
-          "transition-all duration-200",
+          "w-full py-3 text-lg font-bold rounded-lg border-3",
+          "transition-all duration-200 font-mono",
           canSubmit
-            ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-            : "bg-slate-600/50 text-slate-400 cursor-not-allowed",
+            ? "button-primary"
+            : "bg-darts-surface border-darts-border text-dartboard-cream/50 cursor-not-allowed",
           isSubmitting && "animate-pulse"
         )}
         whileHover={canSubmit ? { scale: 1.02 } : {}}
@@ -460,11 +455,11 @@ function ScoreInput({
       >
         {isSubmitting ? (
           <div className="flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Submitting...
+            <div className="w-4 h-4 border-2 border-dartboard-cream/30 border-t-dartboard-cream rounded-full animate-spin" />
+            SUBMITTING...
           </div>
         ) : (
-          'Submit Score'
+          'SUBMIT SCORE'
         )}
       </motion.button>
     </div>
@@ -602,10 +597,7 @@ export function Scoreboard({
     <div className={cn('w-full max-w-7xl mx-auto', className)}>
       {/* TV Scoreboard Container */}
       <motion.div
-        className="rounded-2xl overflow-hidden shadow-2xl"
-        style={{
-          background: 'linear-gradient(135deg, #ef4444 0%, #8b5cf6 50%, #3b82f6 100%)'
-        }}
+        className="rounded-lg overflow-hidden shadow-2xl border-4 border-dartboard-wire bg-darts-background"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
@@ -613,11 +605,11 @@ export function Scoreboard({
         {/* Player Name Banners */}
         <div className="grid grid-cols-2">
           <PlayerBanner name={matchConfig1.name} colorScheme="red" />
-          <PlayerBanner name={matchConfig2.name} colorScheme="blue" />
+          <PlayerBanner name={matchConfig2.name} colorScheme="green" />
         </div>
 
         {/* Main Scoreboard */}
-        <div className="bg-slate-900/95 backdrop-blur-sm">
+        <div className="bg-darts-surface">
           <div className="grid grid-cols-5 items-center p-8 gap-8">
             {/* Player 1 Score Circle */}
             <div className="col-span-2 flex justify-center">
@@ -644,31 +636,31 @@ export function Scoreboard({
                 score={player2.currentScore}
                 player={player2}
                 isActive={currentPlayerIndex === 1}
-                colorScheme="blue"
+                colorScheme="green"
               />
             </div>
           </div>
 
           {/* Match Info Banner */}
-          <div className="border-t border-slate-700/50 px-8 py-4">
-            <div className="text-center text-white">
-              <div className="text-lg font-semibold">
-                {match.config.numberOfSets ? `Set ${match.currentSetIndex + 1}` : 'Match'}, 
-                Leg {match.currentLegIndex + 1}
+          <div className="border-t border-dartboard-wire px-8 py-4">
+            <div className="text-center text-dartboard-cream">
+              <div className="text-lg font-semibold font-mono uppercase">
+                {match.config.numberOfSets ? `SET ${match.currentSetIndex + 1}` : 'MATCH'}, 
+                LEG {match.currentLegIndex + 1}
                 {!legWinner && currentPlayer && (
-                  <span className="ml-4 text-emerald-400">
-                    • Round {Math.floor(currentLeg.players[0].throws.length) + 1}
+                  <span className="ml-4 text-dartboard-green">
+                    • ROUND {Math.floor(currentLeg.players[0].throws.length) + 1}
                   </span>
                 )}
               </div>
               {legWinner && (
                 <motion.div 
-                  className="text-2xl font-bold text-yellow-400 mt-2"
+                  className="text-2xl font-bold text-dartboard-cream mt-2 font-mono"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 >
-                  🏆 {legWinner.name} Wins the Leg! 🏆
+                  🎯 {legWinner.name.toUpperCase()} WINS THE LEG! 🎯
                 </motion.div>
               )}
             </div>

@@ -25,12 +25,12 @@ function StatItem({ label, value, highlight, className }: StatItemProps) {
     <div className={cn("text-center", className)}>
       <div className={cn(
         "font-mono font-bold",
-        highlight ? "text-emerald-400" : "text-white",
+        highlight ? "text-dartboard-red" : "text-dartboard-cream",
         typeof value === 'number' && value >= 100 ? "text-lg" : "text-sm"
       )}>
         {value}
       </div>
-      <div className="text-xs text-slate-400 uppercase tracking-wide">
+      <div className="text-xs text-dartboard-cream/60 uppercase tracking-wide font-mono">
         {label}
       </div>
     </div>
@@ -47,12 +47,12 @@ function RecentScores({ throws }: { throws: GameThrow[] }) {
           <motion.span
             key={`${throwData.roundNumber}-${idx}`}
             className={cn(
-              "text-xs px-2 py-1 rounded font-mono font-medium",
-              throwData.score >= 140 ? "bg-yellow-500/30 text-yellow-200" :
-              throwData.score >= 100 ? "bg-blue-500/30 text-blue-200" :
-              throwData.score >= 80 ? "bg-green-500/30 text-green-200" :
-              "bg-slate-600/30 text-slate-300",
-              throwData.isCheckout && "ring-2 ring-emerald-500/50"
+              "text-xs px-2 py-1 rounded font-mono font-medium border",
+              throwData.score >= 140 ? "bg-dartboard-red/30 text-dartboard-cream border-dartboard-red" :
+              throwData.score >= 100 ? "bg-dartboard-green/30 text-dartboard-cream border-dartboard-green" :
+              throwData.score >= 80 ? "bg-dartboard-green/20 text-dartboard-cream border-dartboard-green/50" :
+              "bg-darts-surface text-dartboard-cream border-darts-border",
+              throwData.isCheckout && "ring-2 ring-dartboard-red"
             )}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -80,11 +80,11 @@ export function PlayerCard({
   return (
     <motion.div
       className={cn(
-        "relative rounded-xl border-2 backdrop-blur-sm transition-all duration-300",
-        "bg-gradient-to-br from-slate-800/50 to-slate-900/50",
-        isActive && "border-emerald-500/50 bg-emerald-500/5 shadow-lg shadow-emerald-500/10",
-        isWinner && "border-yellow-500/50 bg-yellow-500/5 shadow-lg shadow-yellow-500/10",
-        !isActive && !isWinner && "border-slate-600/30",
+        "relative rounded-lg border-2 transition-all duration-300",
+        "bg-darts-surface",
+        isActive && "border-dartboard-red bg-darts-surface shadow-lg",
+        isWinner && "border-dartboard-green bg-darts-surface shadow-lg",
+        !isActive && !isWinner && "border-darts-border",
         className
       )}
       layout
@@ -97,10 +97,10 @@ export function PlayerCard({
       {position && (
         <div className={cn(
           "absolute -top-3 -left-3 w-8 h-8 rounded-full",
-          "bg-slate-700 border-2 border-slate-600",
-          "flex items-center justify-center text-sm font-bold text-white",
-          isActive && "bg-emerald-600 border-emerald-500",
-          isWinner && "bg-yellow-600 border-yellow-500"
+          "bg-darts-surface border-2 border-darts-border",
+          "flex items-center justify-center text-sm font-bold text-dartboard-cream font-mono",
+          isActive && "bg-dartboard-red border-dartboard-red",
+          isWinner && "bg-dartboard-green border-dartboard-green"
         )}>
           {position}
         </div>
@@ -115,8 +115,8 @@ export function PlayerCard({
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
           >
-            <div className="flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <div className="flex items-center gap-1 bg-dartboard-red text-dartboard-cream text-xs font-bold px-2 py-1 rounded font-mono">
+              <div className="w-2 h-2 bg-dartboard-cream rounded-full animate-pulse" />
               THROWING
             </div>
           </motion.div>
@@ -132,8 +132,8 @@ export function PlayerCard({
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: 180 }}
           >
-            <div className="flex items-center gap-1 bg-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-              🏆 WINNER
+            <div className="flex items-center gap-1 bg-dartboard-green text-dartboard-cream text-xs font-bold px-2 py-1 rounded font-mono">
+              🎯 WINNER
             </div>
           </motion.div>
         )}
@@ -144,15 +144,15 @@ export function PlayerCard({
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className={cn(
-              "text-lg font-bold",
-              isActive ? "text-emerald-400" :
-              isWinner ? "text-yellow-400" :
-              "text-white"
+              "text-lg font-bold font-mono",
+              isActive ? "text-dartboard-red" :
+              isWinner ? "text-dartboard-green" :
+              "text-dartboard-cream"
             )}>
-              {player.name}
+              {player.name.toUpperCase()}
             </h3>
             {showDetailedStats && (
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-dartboard-cream/60 font-mono">
                 Starting: {player.startingScore}
               </div>
             )}
@@ -162,20 +162,20 @@ export function PlayerCard({
             <motion.div 
               className={cn(
                 "text-3xl font-mono font-bold tabular-nums",
-                player.currentScore === 0 ? "text-emerald-400" :
-                player.currentScore <= 40 ? "text-yellow-400" :
-                "text-white"
+                player.currentScore === 0 ? "text-dartboard-green" :
+                player.currentScore <= 40 ? "text-dartboard-red" :
+                "text-dartboard-cream"
               )}
               key={player.currentScore}
-              initial={{ scale: 1.2, color: "#10b981" }}
-              animate={{ scale: 1, color: "currentColor" }}
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
               transition={{ duration: 0.3 }}
             >
               {player.currentScore}
             </motion.div>
             
             {player.throws.length > 0 && (
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-dartboard-cream/60 font-mono">
                 Last: <span className="font-mono">{player.throws[player.throws.length - 1]?.score}</span>
               </div>
             )}
@@ -204,7 +204,7 @@ export function PlayerCard({
         {/* Detailed stats (if enabled) */}
         {showDetailedStats && (
           <motion.div
-            className="grid grid-cols-4 gap-2 pt-3 border-t border-slate-600/30"
+            className="grid grid-cols-4 gap-2 pt-3 border-t border-darts-border"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             transition={{ delay: 0.2 }}
@@ -229,12 +229,12 @@ export function PlayerCard({
       <AnimatePresence>
         {player.currentScore <= 170 && player.currentScore > 1 && !isWinner && (
           <motion.div
-            className="absolute inset-0 rounded-xl border-2 border-yellow-400/50 bg-yellow-400/5"
+            className="absolute inset-0 rounded-lg border-2 border-dartboard-red bg-dartboard-red/10"
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
-            <div className="absolute top-2 left-2 bg-yellow-500/90 text-black text-xs font-bold px-2 py-1 rounded">
+            <div className="absolute top-2 left-2 bg-dartboard-red text-dartboard-cream text-xs font-bold px-2 py-1 rounded font-mono">
               ON A FINISH
             </div>
           </motion.div>

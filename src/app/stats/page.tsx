@@ -43,10 +43,10 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-darts-green border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Loading player statistics...</p>
+      <div className="min-h-screen bg-darts-background flex items-center justify-center">
+        <div className="text-dartboard-cream text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-dartboard-red border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="font-mono">Loading player statistics...</p>
         </div>
       </div>
     );
@@ -54,23 +54,23 @@ export default function StatsPage() {
 
   if (profiles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent">
+      <div className="min-h-screen bg-darts-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <Link href="/" className="text-darts-green hover:text-green-400 mb-6 inline-block">
-              ← Back to Home
+            <Link href="/" className="text-dartboard-green hover:text-green-300 mb-6 inline-block font-mono">
+              ← BACK TO HOME
             </Link>
-            <div className="bg-white/10 rounded-xl p-8 max-w-md mx-auto">
+            <div className="bg-darts-surface border-2 border-darts-border rounded-lg p-8 max-w-md mx-auto">
               <div className="text-4xl mb-4">📊</div>
-              <h1 className="text-2xl font-bold text-white mb-4">No Player Data</h1>
-              <p className="text-gray-300 mb-6">
+              <h1 className="text-2xl font-bold text-dartboard-cream mb-4 font-mono">NO PLAYER DATA</h1>
+              <p className="text-dartboard-cream/70 mb-6 font-mono">
                 Play some matches to start tracking player statistics!
               </p>
               <Link
                 href="/setup"
-                className="bg-darts-green hover:bg-green-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                className="button-primary px-6 py-3 font-mono"
               >
-                Start Your First Match
+                START YOUR FIRST MATCH
               </Link>
             </div>
           </div>
@@ -80,15 +80,15 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent">
+    <div className="min-h-screen bg-darts-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link href="/" className="text-darts-green hover:text-green-400 mb-2 inline-block">
-              ← Back to Home
+            <Link href="/" className="text-dartboard-green hover:text-green-300 mb-2 inline-block font-mono">
+              ← BACK TO HOME
             </Link>
-            <h1 className="text-3xl font-bold text-white">📊 Player Statistics</h1>
+            <h1 className="text-3xl font-bold text-dartboard-cream font-mono">📊 PLAYER STATISTICS</h1>
           </div>
         </div>
 
@@ -98,75 +98,75 @@ export default function StatsPage() {
             <div className="mb-6">
               <button
                 onClick={() => setSelectedPlayer(null)}
-                className="text-darts-green hover:text-green-400 mb-4"
+                className="text-dartboard-green hover:text-green-300 mb-4 font-mono"
               >
-                ← Back to All Players
+                ← BACK TO ALL PLAYERS
               </button>
-              <h2 className="text-2xl font-bold text-white mb-2">{selectedPlayer.name}</h2>
+              <h2 className="text-2xl font-bold text-dartboard-cream mb-2 font-mono">{selectedPlayer.name.toUpperCase()}</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {/* Games Stats */}
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Match Record</h3>
+              <div className="bg-darts-surface border-2 border-darts-border rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-dartboard-cream mb-4 font-mono">MATCH RECORD</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Games Played:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.matches_played}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Games Played:</span>
+                    <span className="text-dartboard-cream font-bold font-mono">{selectedPlayer.matches_played}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Games Won:</span>
-                    <span className="text-darts-green font-semibold">{selectedPlayer.matches_won}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Games Won:</span>
+                    <span className="text-dartboard-green font-bold font-mono">{selectedPlayer.matches_won}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Win Rate:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.win_percentage}%</span>
+                    <span className="text-dartboard-cream/70 font-mono">Win Rate:</span>
+                    <span className="text-dartboard-cream font-bold font-mono">{selectedPlayer.win_percentage}%</span>
                   </div>
                 </div>
               </div>
 
               {/* Scoring Stats */}
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Scoring</h3>
+              <div className="bg-darts-surface border-2 border-darts-border rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-dartboard-cream mb-4 font-mono">SCORING</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Overall Average:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.overall_average.toFixed(2)}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Overall Average:</span>
+                    <span className="text-dartboard-cream font-bold font-mono">{selectedPlayer.overall_average.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Highest Score:</span>
-                    <span className="text-yellow-400 font-semibold">{selectedPlayer.highest_score}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Highest Score:</span>
+                    <span className="text-dartboard-red font-bold font-mono">{selectedPlayer.highest_score}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">100+ Scores:</span>
-                    <span className="text-blue-400 font-semibold">{selectedPlayer.scores_100_plus}</span>
+                    <span className="text-dartboard-cream/70 font-mono">100+ Scores:</span>
+                    <span className="text-dartboard-green font-bold font-mono">{selectedPlayer.scores_100_plus}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">140+ Scores:</span>
-                    <span className="text-blue-400 font-semibold">{selectedPlayer.scores_140_plus}</span>
+                    <span className="text-dartboard-cream/70 font-mono">140+ Scores:</span>
+                    <span className="text-dartboard-green font-bold font-mono">{selectedPlayer.scores_140_plus}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">180s:</span>
-                    <span className="text-yellow-400 font-semibold">{selectedPlayer.scores_180}</span>
+                    <span className="text-dartboard-cream/70 font-mono">180s:</span>
+                    <span className="text-dartboard-red font-bold font-mono">{selectedPlayer.scores_180}</span>
                   </div>
                 </div>
               </div>
 
               {/* Dart Stats */}
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Statistics</h3>
+              <div className="bg-darts-surface border-2 border-darts-border rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-dartboard-cream mb-4 font-mono">STATISTICS</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Total Throws:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.total_throws.toLocaleString()}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Total Throws:</span>
+                    <span className="text-dartboard-cream font-bold font-mono">{selectedPlayer.total_throws.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Total Score:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.total_score.toLocaleString()}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Total Score:</span>
+                    <span className="text-dartboard-cream font-bold font-mono">{selectedPlayer.total_score.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Successful Checkouts:</span>
-                    <span className="text-darts-green font-semibold">{selectedPlayer.successful_checkouts}</span>
+                    <span className="text-dartboard-cream/70 font-mono">Successful Checkouts:</span>
+                    <span className="text-dartboard-green font-bold font-mono">{selectedPlayer.successful_checkouts}</span>
                   </div>
                 </div>
               </div>
@@ -180,20 +180,20 @@ export default function StatsPage() {
             {/* Sort Controls */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-2">
-                <span className="text-gray-300 text-sm self-center mr-2">Sort by:</span>
+                <span className="text-dartboard-cream/70 text-sm self-center mr-2 font-mono">SORT BY:</span>
                 {[
-                  { key: 'name', label: 'Name' },
-                  { key: 'average', label: 'Best Average' },
-                  { key: 'wins', label: 'Wins' },
-                  { key: 'games', label: 'Games Played' }
+                  { key: 'name', label: 'NAME' },
+                  { key: 'average', label: 'BEST AVERAGE' },
+                  { key: 'wins', label: 'WINS' },
+                  { key: 'games', label: 'GAMES PLAYED' }
                 ].map(option => (
                   <button
                     key={option.key}
                     onClick={() => setSortBy(option.key as any)}
-                    className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                    className={`px-3 py-1 rounded border text-sm transition-colors font-mono font-bold ${
                       sortBy === option.key
-                        ? 'bg-darts-green text-white'
-                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        ? 'bg-dartboard-red border-dartboard-red text-dartboard-cream'
+                        : 'bg-darts-surface border-darts-border text-dartboard-cream/70 hover:bg-darts-border'
                     }`}
                   >
                     {option.label}
@@ -208,37 +208,37 @@ export default function StatsPage() {
                 <div
                   key={profile.id}
                   onClick={() => setSelectedPlayer(profile)}
-                  className="bg-white/10 hover:bg-white/20 rounded-xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+                  className="bg-darts-surface hover:bg-darts-border border-2 border-darts-border rounded-lg p-6 cursor-pointer transition-colors duration-200"
                 >
                   <div className="text-center mb-4">
-                    <h3 className="text-xl font-bold text-white mb-2">{profile.name}</h3>
-                    <div className="w-16 h-16 bg-darts-green/30 rounded-full flex items-center justify-center mx-auto">
+                    <h3 className="text-xl font-bold text-dartboard-cream mb-2 font-mono">{profile.name.toUpperCase()}</h3>
+                    <div className="w-16 h-16 bg-dartboard-green/30 border-2 border-dartboard-green rounded-full flex items-center justify-center mx-auto">
                       <span className="text-2xl">🎯</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Games:</span>
-                      <span className="text-white">{profile.matches_played}</span>
+                      <span className="text-dartboard-cream/70 font-mono">Games:</span>
+                      <span className="text-dartboard-cream font-mono font-bold">{profile.matches_played}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Win Rate:</span>
-                      <span className="text-darts-green">{profile.win_percentage}%</span>
+                      <span className="text-dartboard-cream/70 font-mono">Win Rate:</span>
+                      <span className="text-dartboard-green font-mono font-bold">{profile.win_percentage}%</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Avg:</span>
-                      <span className="text-white">{profile.overall_average.toFixed(1)}</span>
+                      <span className="text-dartboard-cream/70 font-mono">Avg:</span>
+                      <span className="text-dartboard-cream font-mono font-bold">{profile.overall_average.toFixed(1)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">High Score:</span>
-                      <span className="text-yellow-400">{profile.highest_score}</span>
+                      <span className="text-dartboard-cream/70 font-mono">High Score:</span>
+                      <span className="text-dartboard-red font-mono font-bold">{profile.highest_score}</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/10">
-                    <div className="text-xs text-gray-400 text-center">
-                      Click to view detailed stats →
+                  <div className="mt-4 pt-3 border-t border-darts-border">
+                    <div className="text-xs text-dartboard-cream/60 text-center font-mono">
+                      CLICK TO VIEW DETAILED STATS →
                     </div>
                   </div>
                 </div>

@@ -27,9 +27,9 @@ const NUMPAD_BUTTONS = [
   { value: '7', label: '7' },
   { value: '8', label: '8' },
   { value: '9', label: '9' },
-  { value: 'clear', label: 'Clear', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-200' },
+  { value: 'clear', label: 'CLR', className: 'numpad-button' },
   { value: '0', label: '0' },
-  { value: 'backspace', label: '⌫', className: 'bg-slate-500/20 hover:bg-slate-500/30 text-slate-200' },
+  { value: 'backspace', label: '⌫', className: 'numpad-button' },
 ];
 
 const QUICK_SCORES = [26, 41, 45, 60, 81, 85, 95, 100, 140, 180];
@@ -145,11 +145,11 @@ export function ScoreInput({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h3 className="text-xl font-bold text-white mb-1">
-            {currentPlayer.name}'s Turn
+          <h3 className="text-xl font-bold text-dartboard-cream mb-1 font-mono">
+            {currentPlayer.name.toUpperCase()}'S TURN
           </h3>
-          <p className="text-gray-300 text-sm">
-            Score remaining: <span className="font-mono text-lg">{currentPlayer.currentScore}</span>
+          <p className="text-dartboard-cream/70 text-sm">
+            Score remaining: <span className="font-mono text-lg text-dartboard-red">{currentPlayer.currentScore}</span>
           </p>
         </motion.div>
       )}
@@ -164,15 +164,15 @@ export function ScoreInput({
             type="text"
             value={input}
             readOnly
-            placeholder="Enter score"
+            placeholder="ENTER SCORE"
             className={cn(
               "w-full text-center text-4xl font-mono font-bold",
-              "bg-slate-800/50 border-2 rounded-xl px-4 py-6",
-              "text-white placeholder-gray-400",
+              "bg-darts-surface border-3 rounded-lg px-4 py-6",
+              "text-dartboard-cream placeholder-dartboard-cream/40",
               "transition-all duration-200",
               isValidInput 
-                ? "border-emerald-500/50 focus:border-emerald-500" 
-                : "border-red-500/50 focus:border-red-500",
+                ? "border-dartboard-green focus:border-dartboard-green" 
+                : "border-dartboard-red focus:border-dartboard-red",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           />
@@ -185,8 +185,8 @@ export function ScoreInput({
                   "absolute right-3 top-1/2 -translate-y-1/2",
                   "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
                   isValidInput 
-                    ? "bg-emerald-500 text-white" 
-                    : "bg-red-500 text-white"
+                    ? "bg-dartboard-green text-dartboard-cream" 
+                    : "bg-dartboard-red text-dartboard-cream"
                 )}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -202,7 +202,7 @@ export function ScoreInput({
         <AnimatePresence>
           {error && (
             <motion.p
-              className="text-red-400 text-sm mt-2 text-center"
+              className="text-dartboard-red text-sm mt-2 text-center font-mono"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -218,16 +218,16 @@ export function ScoreInput({
         <button
           onClick={() => setShowQuickScores(!showQuickScores)}
           className={cn(
-            "text-sm px-3 py-1 rounded-full transition-colors",
-            "bg-slate-700/50 hover:bg-slate-600/50 text-slate-300"
+            "text-sm px-3 py-1 rounded transition-colors font-mono",
+            "bg-darts-surface hover:bg-darts-border text-dartboard-cream border border-darts-border"
           )}
           disabled={disabled}
         >
-          {showQuickScores ? 'Hide' : 'Show'} Quick Scores
+          {showQuickScores ? 'HIDE' : 'SHOW'} QUICK SCORES
         </button>
         
         {input && (
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-dartboard-cream/60 font-mono">
             {currentScore} / {maxScore}
           </div>
         )}
@@ -247,9 +247,9 @@ export function ScoreInput({
                 key={score}
                 onClick={() => handleQuickScore(score)}
                 className={cn(
-                  "py-2 px-1 text-xs font-medium rounded-lg",
-                  "bg-blue-500/20 hover:bg-blue-500/30 text-blue-200",
-                  "transition-colors duration-150",
+                  "py-2 px-1 text-xs font-bold rounded border-2",
+                  "bg-dartboard-green hover:bg-green-700 text-dartboard-cream border-green-800",
+                  "transition-colors duration-150 font-mono",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
                 disabled={disabled}
@@ -270,11 +270,8 @@ export function ScoreInput({
             key={button.value}
             onClick={() => button.value === 'submit' ? handleSubmit() : handleInput(button.value)}
             className={cn(
-              "py-4 text-xl font-bold rounded-xl",
-              "bg-slate-700/50 hover:bg-slate-600/50 text-white",
-              "transition-colors duration-150",
+              "numpad-button",
               "disabled:opacity-50 disabled:cursor-not-allowed",
-              "active:scale-95 transform",
               button.className
             )}
             disabled={disabled}
@@ -291,11 +288,11 @@ export function ScoreInput({
         onClick={handleSubmit}
         disabled={!canSubmit}
         className={cn(
-          "w-full py-4 text-lg font-bold rounded-xl",
-          "transition-all duration-200",
+          "w-full py-4 text-lg font-bold rounded-lg border-3",
+          "transition-all duration-200 font-mono",
           canSubmit
-            ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-            : "bg-slate-600/50 text-slate-400 cursor-not-allowed",
+            ? "button-primary"
+            : "bg-darts-surface border-darts-border text-dartboard-cream/50 cursor-not-allowed",
           isSubmitting && "animate-pulse"
         )}
         whileHover={canSubmit ? { scale: 1.02 } : {}}
@@ -303,11 +300,11 @@ export function ScoreInput({
       >
         {isSubmitting ? (
           <div className="flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Submitting...
+            <div className="w-4 h-4 border-2 border-dartboard-cream/30 border-t-dartboard-cream rounded-full animate-spin" />
+            SUBMITTING...
           </div>
         ) : (
-          'Submit Score'
+          'SUBMIT SCORE'
         )}
       </motion.button>
     </div>

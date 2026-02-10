@@ -90,31 +90,31 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent">
+    <div className="min-h-screen bg-darts-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">🎯 Match Setup</h1>
-            <p className="text-gray-300">Configure your darts match</p>
+            <h1 className="text-3xl font-bold text-dartboard-cream mb-2 font-mono">🎯 MATCH SETUP</h1>
+            <p className="text-dartboard-cream/70">Configure your darts match</p>
           </div>
 
-          <div className="bg-white/10 border border-white/20 rounded-xl p-6 backdrop-blur-sm">
+          <div className="bg-darts-surface border-2 border-darts-border rounded-lg p-6">
             {/* Players Section */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-4">Players</h2>
+              <h2 className="text-xl font-semibold text-dartboard-cream mb-4 font-mono">PLAYERS</h2>
               
               <div className="space-y-4">
                 {players.map((player, index) => (
-                  <div key={player.id} className="bg-white/5 rounded-lg p-4">
+                  <div key={player.id} className="bg-darts-background border border-darts-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-medium text-white">Player {index + 1}</h3>
+                      <h3 className="text-lg font-medium text-dartboard-cream font-mono">PLAYER {index + 1}</h3>
                       {players.length > 2 && (
                         <button
                           onClick={() => removePlayer(index)}
-                          className="text-darts-red hover:text-red-400 text-sm"
+                          className="text-dartboard-red hover:text-red-300 text-sm font-mono"
                         >
-                          Remove
+                          REMOVE
                         </button>
                       )}
                     </div>
@@ -122,23 +122,23 @@ export default function SetupPage() {
                     <div className="space-y-3">
                       <input
                         type="text"
-                        placeholder="Player name"
+                        placeholder="PLAYER NAME"
                         value={player.name}
                         onChange={(e) => updatePlayer(index, 'name', e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-darts-green"
+                        className="w-full bg-darts-surface border-2 border-darts-border rounded-lg px-4 py-3 text-dartboard-cream placeholder-dartboard-cream/40 focus:outline-none focus:border-dartboard-red font-mono"
                       />
                       
                       <div>
-                        <label className="block text-gray-300 text-sm mb-2">Starting Score</label>
+                        <label className="block text-dartboard-cream/70 text-sm mb-2 font-mono">STARTING SCORE</label>
                         <div className="grid grid-cols-3 gap-2 mb-2">
                           {STARTING_SCORES.map(score => (
                             <button
                               key={score}
                               onClick={() => updatePlayer(index, 'startingScore', score)}
-                              className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                              className={`py-2 px-3 rounded border-2 text-sm font-bold transition-colors font-mono ${
                                 player.startingScore === score
-                                  ? 'bg-darts-green text-white'
-                                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                  ? 'bg-dartboard-red border-dartboard-red text-dartboard-cream'
+                                  : 'bg-darts-surface border-darts-border text-dartboard-cream hover:bg-darts-border'
                               }`}
                             >
                               {score}
@@ -149,7 +149,7 @@ export default function SetupPage() {
                         <div className="flex gap-2">
                           <input
                             type="number"
-                            placeholder="Custom"
+                            placeholder="CUSTOM"
                             value={showCustomScore === index.toString() ? customScore : ''}
                             onChange={(e) => setCustomScore(e.target.value)}
                             onFocus={() => setShowCustomScore(index.toString())}
@@ -161,10 +161,10 @@ export default function SetupPage() {
                                 handleCustomScore(index.toString(), customScore);
                               }
                             }}
-                            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-darts-green"
+                            className="flex-1 bg-darts-surface border-2 border-darts-border rounded px-3 py-2 text-dartboard-cream placeholder-dartboard-cream/40 text-sm focus:outline-none focus:border-dartboard-red font-mono"
                           />
                           {showCustomScore !== index.toString() && (
-                            <div className="px-3 py-2 bg-white/5 rounded-lg text-gray-300 text-sm border border-white/10">
+                            <div className="px-3 py-2 bg-darts-surface rounded text-dartboard-cream text-sm border-2 border-darts-border font-mono font-bold">
                               {player.startingScore}
                             </div>
                           )}
@@ -177,9 +177,9 @@ export default function SetupPage() {
                 {players.length < 8 && (
                   <button
                     onClick={addPlayer}
-                    className="w-full py-3 border-2 border-dashed border-white/30 rounded-lg text-gray-300 hover:border-white/50 hover:text-white transition-colors"
+                    className="w-full py-3 border-2 border-dashed border-darts-border rounded-lg text-dartboard-cream/70 hover:border-dartboard-red hover:text-dartboard-cream transition-colors font-mono font-bold"
                   >
-                    + Add Player
+                    + ADD PLAYER
                   </button>
                 )}
               </div>
@@ -187,15 +187,15 @@ export default function SetupPage() {
 
             {/* Match Format */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-4">Match Format</h2>
+              <h2 className="text-xl font-semibold text-dartboard-cream mb-4 font-mono">MATCH FORMAT</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-2">Sets</label>
+                  <label className="block text-dartboard-cream/70 text-sm mb-2 font-mono">SETS</label>
                   <select
                     value={numberOfSets || 'none'}
                     onChange={(e) => setNumberOfSets(e.target.value === 'none' ? undefined : parseInt(e.target.value))}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-darts-green"
+                    className="w-full bg-darts-surface border-2 border-darts-border rounded px-4 py-3 text-dartboard-cream focus:outline-none focus:border-dartboard-red font-mono"
                   >
                     <option value="none">No Sets (Just Legs)</option>
                     <option value={1}>Best of 1 Set</option>
@@ -206,11 +206,11 @@ export default function SetupPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-2">Legs</label>
+                  <label className="block text-dartboard-cream/70 text-sm mb-2 font-mono">LEGS</label>
                   <select
                     value={numberOfLegs}
                     onChange={(e) => setNumberOfLegs(parseInt(e.target.value))}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-darts-green"
+                    className="w-full bg-darts-surface border-2 border-darts-border rounded px-4 py-3 text-dartboard-cream focus:outline-none focus:border-dartboard-red font-mono"
                   >
                     <option value={1}>Best of 1 Leg</option>
                     <option value={3}>Best of 3 Legs</option>
@@ -226,16 +226,16 @@ export default function SetupPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => router.push('/')}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-lg font-semibold transition-colors duration-200"
+                className="flex-1 button-secondary py-4 font-mono"
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 onClick={startMatch}
                 disabled={players.some(p => p.name.trim() === '')}
-                className="flex-1 bg-darts-green hover:bg-green-400 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold transition-colors duration-200"
+                className="flex-1 button-primary py-4 font-mono disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Start Match
+                START MATCH
               </button>
             </div>
           </div>
