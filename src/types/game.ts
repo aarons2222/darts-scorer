@@ -1,72 +1,91 @@
-export interface Player {
+// Game state types - used for active matches in memory
+export interface GameThrow {
+  score: number;
+  roundNumber: number;
+  isCheckout: boolean;
+}
+
+export interface GamePlayer {
   id: string;
   name: string;
   startingScore: number;
   currentScore: number;
-  scores: number[];
+  throws: GameThrow[];
   isFinished: boolean;
-  checkoutAttempts: number;
-  successfulCheckouts: number;
 }
 
-export interface GameSettings {
-  numberOfSets?: number; // undefined means no sets
-  numberOfLegs: number;
-  players: Omit<Player, 'currentScore' | 'scores' | 'isFinished' | 'checkoutAttempts' | 'successfulCheckouts'>[];
-}
-
-export interface LegStats {
-  playerId: string;
-  dartCount: number;
-  average: number;
-  highestScore: number;
-  scores100Plus: number;
-  scores140Plus: number;
-  scores180: number;
-  firstNineDartAvg?: number;
-}
-
-export interface Leg {
+export interface GameLeg {
   id: string;
-  players: Player[];
+  setNumber: number;
+  legNumber: number;
+  players: GamePlayer[];
   winnerId?: string;
-  stats: Record<string, LegStats>;
   currentPlayerIndex: number;
+  currentRound: number;
+  isCompleted: boolean;
 }
 
-export interface Set {
-  id: string;
-  legs: Leg[];
+export interface GameSet {
+  setNumber: number;
+  legs: GameLeg[];
   winnerId?: string;
+  isCompleted: boolean;
 }
 
-export interface Match {
+export interface GameMatch {
   id: string;
-  timestamp: number;
-  settings: GameSettings;
-  sets: Set[];
+  config: {
+    numberOfSets?: number;
+    numberOfLegs: number;
+    players: { id: string; name: string; startingScore: number }[];
+  };
+  sets: GameSet[];
   currentSetIndex: number;
   currentLegIndex: number;
-  isFinished: boolean;
+  status: 'in_progress' | 'completed';
   winnerId?: string;
+  timestamp: number;
 }
 
-export interface PlayerProfile {
-  id: string;
-  name: string;
-  stats: {
-    gamesPlayed: number;
-    gamesWon: number;
-    bestAverage: number;
-    highestScore: number;
-    highestCheckout: number;
-    totalDartsThrown: number;
-    totalScore: number;
-  };
-  headToHead: Record<string, { wins: number; losses: number }>;
+// Legacy types for compatibility (gradually remove these)
+export interface GameSettings {
+  numberOfSets?: number;
+  numberOfLegs: number;
+  players: { id: string; name: string; startingScore: number }[];
 }
 
 export type CheckoutSuggestion = {
   combination: string;
   description: string;
 };
+
+export interface LegStats {
+  playerId: string;
+  playerName: string;
+  darts: number;
+  average: number;
+  firstNineDartAverage: number;
+  scores100Plus: number;
+  scores140Plus: number;
+  scores180: number;
+  highestScore: number;
+  finishingScore?: number;
+  isWinner: boolean;
+}
+
+export interface PlayerProfile {
+  id: string;
+  name: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  totalScore: number;
+  bestAverage: number;
+  highestScore: number;
+  averagePerGame: number;
+}
+
+// Type aliases for backward compatibility
+export type Match = GameMatch;
+export type Player = GamePlayer; 
+export type Leg = GameLeg;
+export type Set = GameSet;

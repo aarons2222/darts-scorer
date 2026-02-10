@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GameSettings, Match, Set, Leg, Player, LegStats } from '@/types/game';
-import { generateMatchId, generatePlayerId } from '@/utils/gameLogic';
-import { saveCurrentMatch } from '@/utils/localStorage';
+import { GameSettings } from '@/types/game';
+import { createOrGetPlayer, createMatch, createLeg } from '@/utils/database';
+import { generatePlayerId } from '@/utils/gameLogic';
 
 const STARTING_SCORES = [101, 301, 501, 701, 1001];
 
@@ -48,40 +48,7 @@ export default function SetupPage() {
     setCustomScore('');
   };
 
-  const createInitialLeg = (gameSettings: GameSettings): Leg => {
-    const legPlayers: Player[] = gameSettings.players.map(p => ({
-      id: p.id,
-      name: p.name,
-      startingScore: p.startingScore,
-      currentScore: p.startingScore,
-      scores: [],
-      isFinished: false,
-      checkoutAttempts: 0,
-      successfulCheckouts: 0,
-    }));
-
-    const stats: Record<string, LegStats> = {};
-    gameSettings.players.forEach(p => {
-      stats[p.id] = {
-        playerId: p.id,
-        dartCount: 0,
-        average: 0,
-        highestScore: 0,
-        scores100Plus: 0,
-        scores140Plus: 0,
-        scores180: 0,
-      };
-    });
-
-    return {
-      id: generateMatchId(),
-      players: legPlayers,
-      stats,
-      currentPlayerIndex: 0,
-    };
-  };
-
-  const startMatch = () => {
+  const startMatch = async () => {
     // Validate
     const hasEmptyNames = players.some(p => p.name.trim() === '');
     if (hasEmptyNames) {
@@ -89,34 +56,37 @@ export default function SetupPage() {
       return;
     }
 
-    const gameSettings: GameSettings = {
-      numberOfLegs,
-      numberOfSets,
-      players: players.map(p => ({
-        id: p.id,
-        name: p.name.trim(),
-        startingScore: p.startingScore,
-      })),
-    };
+    try {
+      // Create or get players in database
+      const dbPlayers = await Promise.all(
+        players.map(p => createOrGetPlayer(p.name.trim()))
+      );
 
-    const initialLeg = createInitialLeg(gameSettings);
-    const initialSet: Set = {
-      id: generateMatchId(),
-      legs: [initialLeg],
-    };
+      const gameSettings: GameSettings = {
+        numberOfLegs,
+        numberOfSets,
+        players: dbPlayers.map((dbPlayer, index) => ({
+          id: dbPlayer.id,
+          name: dbPlayer.name,
+          startingScore: players[index].startingScore,
+        })),
+      };
 
-    const match: Match = {
-      id: generateMatchId(),
-      timestamp: Date.now(),
-      settings: gameSettings,
-      sets: [initialSet],
-      currentSetIndex: 0,
-      currentLegIndex: 0,
-      isFinished: false,
-    };
+      // Create match in database
+      const match = await createMatch({
+        numberOfLegs,
+        numberOfSets,
+        players: gameSettings.players,
+      });
 
-    saveCurrentMatch(match);
-    router.push('/game');
+      // Create the first leg
+      await createLeg(match.id, 1, 1);
+
+      router.push('/game');
+    } catch (error) {
+      console.error('Failed to start match:', error);
+      alert('Failed to start match. Please try again.');
+    }
   };
 
   return (

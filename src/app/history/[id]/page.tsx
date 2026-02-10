@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Match } from '@/types/game';
-import { getMatchHistory } from '@/utils/localStorage';
-import { calculateAverage, count100PlusScores, count140PlusScores, count180Scores, getHighestScore } from '@/utils/gameLogic';
+import { GameMatch } from '@/types/game';
+import { DbMatch } from '@/types/database';
+import { getMatch, convertDbMatchToGameMatch } from '@/utils/database';
+import { calculateAverage, getHighestScore, count100PlusScores, count140PlusScores, count180Scores } from '@/utils/gameLogic';
 
 interface MatchDetailPageProps {
   params: { id: string };
@@ -13,20 +14,31 @@ interface MatchDetailPageProps {
 
 export default function MatchDetailPage({ params }: MatchDetailPageProps) {
   const router = useRouter();
-  const [match, setMatch] = useState<Match | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'legs' | 'stats'>('overview');
+  const [match, setMatch] = useState<DbMatch | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'legs'>('overview');
 
   useEffect(() => {
-    const matches = getMatchHistory();
-    const foundMatch = matches.find(m => m.id === params.id);
-    if (!foundMatch) {
-      router.push('/history');
-      return;
-    }
-    setMatch(foundMatch);
-  }, [params.id, router]);
+    loadMatchDetails();
+  }, [params.id]);
 
-  if (!match) {
+  const loadMatchDetails = async () => {
+    try {
+      const foundMatch = await getMatch(params.id);
+      if (!foundMatch) {
+        router.push('/history');
+        return;
+      }
+      setMatch(foundMatch);
+    } catch (error) {
+      console.error('Failed to load match:', error);
+      router.push('/history');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
         <div className="text-white text-center">
@@ -37,50 +49,68 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
     );
   }
 
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
+        <div className="text-white text-center">
+          <p>Match not found</p>
+          <Link 
+            href="/history"
+            className="mt-4 bg-darts-green hover:bg-green-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-block"
+          >
+            Back to History
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const getMatchResult = () => {
-    if (!match.winnerId) return 'Match In Progress';
-    const winner = match.settings.players.find(p => p.id === match.winnerId);
+    if (match.status !== 'completed') return 'Match In Progress';
+    const winner = match.config.players.find(p => p.id === match.winner_id);
     return `${winner?.name} Won!`;
   };
 
-  const getPlayerMatchStats = (playerId: string) => {
-    let allScores: number[] = [];
-    let totalCheckoutAttempts = 0;
-    let successfulCheckouts = 0;
+  const calculatePlayerStats = (playerId: string) => {
+    let totalScore = 0;
+    let throwCount = 0;
+    let highestScore = 0;
+    let scores100Plus = 0;
+    let scores140Plus = 0;
+    let scores180 = 0;
     let legsWon = 0;
-    let setsWon = 0;
 
-    match.sets.forEach(set => {
-      if (set.winnerId === playerId) setsWon++;
-      
-      set.legs.forEach(leg => {
-        if (leg.winnerId === playerId) legsWon++;
+    if (match.legs) {
+      match.legs.forEach((leg: any) => {
+        if (leg.winner_id === playerId) {
+          legsWon++;
+        }
         
-        const player = leg.players.find(p => p.id === playerId);
-        if (player) {
-          allScores.push(...player.scores);
-          totalCheckoutAttempts += player.checkoutAttempts;
-          successfulCheckouts += player.successfulCheckouts;
+        if (leg.darts_throws) {
+          const playerThrows = leg.darts_throws.filter((t: any) => t.player_id === playerId);
+          playerThrows.forEach((t: any) => {
+            totalScore += t.score;
+            throwCount++;
+            if (t.score > highestScore) highestScore = t.score;
+            if (t.score >= 100) scores100Plus++;
+            if (t.score >= 140) scores140Plus++;
+            if (t.score === 180) scores180++;
+          });
         }
       });
-    });
+    }
 
-    const average = allScores.length > 0 ? calculateAverage(allScores) : 0;
-    const checkoutPercentage = totalCheckoutAttempts > 0 
-      ? Math.round((successfulCheckouts / totalCheckoutAttempts) * 100) 
-      : 0;
+    const average = throwCount > 0 ? Math.round(((totalScore / throwCount) * 3) * 100) / 100 : 0;
 
     return {
       average,
-      highestScore: getHighestScore(allScores),
-      scores100Plus: count100PlusScores(allScores),
-      scores140Plus: count140PlusScores(allScores),
-      scores180: count180Scores(allScores),
-      checkoutPercentage,
+      highestScore,
+      scores100Plus,
+      scores140Plus,
+      scores180,
       legsWon,
-      setsWon,
-      totalScores: allScores.length,
-      totalDarts: allScores.length * 3,
+      totalThrows: throwCount,
+      totalScore
     };
   };
 
@@ -93,59 +123,37 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
           <div>
             <h4 className="text-gray-300 text-sm mb-2">Date & Time</h4>
             <p className="text-white">
-              {new Date(match.timestamp).toLocaleDateString()} at{' '}
-              {new Date(match.timestamp).toLocaleTimeString()}
+              {new Date(match.created_at).toLocaleDateString()} at{' '}
+              {new Date(match.created_at).toLocaleTimeString()}
             </p>
           </div>
           <div>
             <h4 className="text-gray-300 text-sm mb-2">Format</h4>
             <p className="text-white">
-              {match.settings.numberOfSets ? `Best of ${match.settings.numberOfSets} sets, ` : ''}
-              Best of {match.settings.numberOfLegs} legs
+              {match.config.numberOfSets ? `Best of ${match.config.numberOfSets} sets, ` : ''}
+              Best of {match.config.numberOfLegs} legs
             </p>
           </div>
           <div>
             <h4 className="text-gray-300 text-sm mb-2">Result</h4>
-            <p className={`font-semibold ${match.isFinished ? 'text-darts-green' : 'text-yellow-400'}`}>
+            <p className={`font-semibold ${match.status === 'completed' ? 'text-darts-green' : 'text-yellow-400'}`}>
               {getMatchResult()}
             </p>
           </div>
           <div>
             <h4 className="text-gray-300 text-sm mb-2">Total Legs Played</h4>
             <p className="text-white">
-              {match.sets.reduce((total, set) => total + set.legs.length, 0)}
+              {match.legs?.length || 0}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Set Scores (if applicable) */}
-      {match.settings.numberOfSets && (
-        <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-          <h2 className="text-xl font-semibold text-white mb-4">Set Results</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {match.settings.players.map(player => {
-              const setsWon = match.sets.filter(set => set.winnerId === player.id).length;
-              return (
-                <div key={player.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4">
-                  <span className="text-white font-medium">{player.name}</span>
-                  <span className={`text-xl font-bold ${
-                    match.winnerId === player.id ? 'text-darts-green' : 'text-white'
-                  }`}>
-                    {setsWon}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Player Match Statistics */}
+      {/* Player Statistics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {match.settings.players.map(player => {
-          const stats = getPlayerMatchStats(player.id);
-          const isWinner = match.winnerId === player.id;
+        {match.config.players.map(player => {
+          const stats = calculatePlayerStats(player.id);
+          const isWinner = match.winner_id === player.id;
 
           return (
             <div
@@ -187,16 +195,16 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
                   <div className="text-yellow-400 font-semibold">{stats.scores180}</div>
                 </div>
                 <div>
-                  <span className="text-gray-300">Checkout %:</span>
-                  <div className="text-darts-green font-semibold">{stats.checkoutPercentage}%</div>
-                </div>
-                <div>
                   <span className="text-gray-300">Legs Won:</span>
                   <div className="text-white font-semibold">{stats.legsWon}</div>
                 </div>
                 <div>
-                  <span className="text-gray-300">Total Darts:</span>
-                  <div className="text-white font-semibold">{stats.totalDarts}</div>
+                  <span className="text-gray-300">Total Throws:</span>
+                  <div className="text-white font-semibold">{stats.totalThrows}</div>
+                </div>
+                <div>
+                  <span className="text-gray-300">Total Score:</span>
+                  <div className="text-white font-semibold">{stats.totalScore}</div>
                 </div>
               </div>
             </div>
@@ -208,160 +216,71 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
 
   const renderLegs = () => (
     <div className="space-y-6">
-      {match.sets.map((set, setIndex) => (
-        <div key={set.id} className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">
-              {match.settings.numberOfSets ? `Set ${setIndex + 1}` : 'Match'}
-            </h2>
-            {set.winnerId && (
-              <span className="bg-darts-green text-white text-sm px-3 py-1 rounded-full">
-                Won by {match.settings.players.find(p => p.id === set.winnerId)?.name}
-              </span>
-            )}
-          </div>
-
+      {match.legs && match.legs.length > 0 ? (
+        <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
+          <h2 className="text-xl font-semibold text-white mb-4">Leg Results</h2>
           <div className="space-y-4">
-            {set.legs.map((leg, legIndex) => (
+            {match.legs.map((leg: any, legIndex: number) => (
               <div key={leg.id} className="bg-white/5 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-white font-medium">Leg {legIndex + 1}</h3>
-                  {leg.winnerId && (
+                  <h3 className="text-white font-medium">
+                    {match.config.numberOfSets ? `Set ${leg.set_number}, ` : ''}
+                    Leg {leg.leg_number}
+                  </h3>
+                  {leg.winner_id && (
                     <span className="text-darts-green text-sm font-semibold">
-                      {match.settings.players.find(p => p.id === leg.winnerId)?.name} won
+                      {match.config.players.find(p => p.id === leg.winner_id)?.name} won
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {leg.players.map(player => (
-                    <div key={player.id} className="text-center">
-                      <div className="text-white font-medium mb-2">{player.name}</div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {player.startingScore - player.scores.reduce((sum, s) => sum + s, 0)}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {match.config.players.map(player => {
+                    const playerThrows = leg.darts_throws?.filter((t: any) => t.player_id === player.id) || [];
+                    const totalScore = playerThrows.reduce((sum: number, t: any) => sum + t.score, 0);
+                    const average = playerThrows.length > 0 
+                      ? Math.round(((totalScore / playerThrows.length) * 3) * 10) / 10 
+                      : 0;
+                    const finalScore = player.startingScore - totalScore;
+
+                    return (
+                      <div key={player.id} className="text-center">
+                        <div className="text-white font-medium mb-2">{player.name}</div>
+                        <div className={`text-2xl font-bold mb-1 ${
+                          finalScore === 0 ? 'text-darts-green' : 'text-white'
+                        }`}>
+                          {finalScore}
+                        </div>
+                        <div className="text-gray-300 text-sm">
+                          Avg: {average}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                          {playerThrows.slice(-3).map((t: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className={`text-xs px-2 py-1 rounded ${
+                                t.score >= 100 ? 'bg-yellow-600/30 text-yellow-200' :
+                                t.score >= 80 ? 'bg-blue-600/30 text-blue-200' :
+                                'bg-white/10 text-gray-300'
+                              }`}
+                            >
+                              {t.score}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                      <div className="text-gray-300 text-sm">
-                        Avg: {player.scores.length > 0 ? calculateAverage(player.scores).toFixed(1) : '0.0'}
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2 justify-center">
-                        {player.scores.slice(-3).map((score, idx) => (
-                          <span
-                            key={idx}
-                            className={`text-xs px-2 py-1 rounded ${
-                              score >= 100 ? 'bg-yellow-600/30 text-yellow-200' :
-                              score >= 80 ? 'bg-blue-600/30 text-blue-200' :
-                              'bg-white/10 text-gray-300'
-                            }`}
-                          >
-                            {score}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
         </div>
-      ))}
-    </div>
-  );
-
-  const renderStats = () => (
-    <div className="space-y-6">
-      <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-        <h2 className="text-xl font-semibold text-white mb-6">Detailed Statistics</h2>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/20">
-                <th className="text-left text-gray-300 py-2">Player</th>
-                <th className="text-center text-gray-300 py-2">Avg</th>
-                <th className="text-center text-gray-300 py-2">High</th>
-                <th className="text-center text-gray-300 py-2">100+</th>
-                <th className="text-center text-gray-300 py-2">140+</th>
-                <th className="text-center text-gray-300 py-2">180s</th>
-                <th className="text-center text-gray-300 py-2">Checkout %</th>
-                <th className="text-center text-gray-300 py-2">Legs Won</th>
-              </tr>
-            </thead>
-            <tbody>
-              {match.settings.players.map(player => {
-                const stats = getPlayerMatchStats(player.id);
-                const isWinner = match.winnerId === player.id;
-                
-                return (
-                  <tr key={player.id} className={`border-b border-white/10 ${isWinner ? 'bg-darts-green/10' : ''}`}>
-                    <td className="py-3">
-                      <div className="flex items-center">
-                        <span className={`font-medium ${isWinner ? 'text-darts-green' : 'text-white'}`}>
-                          {player.name}
-                        </span>
-                        {isWinner && <span className="ml-2 text-xs">🏆</span>}
-                      </div>
-                    </td>
-                    <td className="text-center text-white py-3">{stats.average.toFixed(2)}</td>
-                    <td className="text-center text-yellow-400 py-3">{stats.highestScore}</td>
-                    <td className="text-center text-white py-3">{stats.scores100Plus}</td>
-                    <td className="text-center text-blue-400 py-3">{stats.scores140Plus}</td>
-                    <td className="text-center text-yellow-400 py-3">{stats.scores180}</td>
-                    <td className="text-center text-darts-green py-3">{stats.checkoutPercentage}%</td>
-                    <td className="text-center text-white py-3">{stats.legsWon}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      ) : (
+        <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm text-center">
+          <p className="text-gray-300">No leg details available</p>
         </div>
-      </div>
-
-      {/* Score Distribution Chart */}
-      <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-        <h3 className="text-lg font-semibold text-white mb-4">Score Distribution</h3>
-        {match.settings.players.map(player => {
-          const allScores: number[] = [];
-          match.sets.forEach(set => {
-            set.legs.forEach(leg => {
-              const legPlayer = leg.players.find(p => p.id === player.id);
-              if (legPlayer) {
-                allScores.push(...legPlayer.scores);
-              }
-            });
-          });
-
-          const scoreRanges = {
-            '0-40': allScores.filter(s => s >= 0 && s <= 40).length,
-            '41-80': allScores.filter(s => s >= 41 && s <= 80).length,
-            '81-100': allScores.filter(s => s >= 81 && s <= 100).length,
-            '101-140': allScores.filter(s => s >= 101 && s <= 140).length,
-            '141+': allScores.filter(s => s >= 141).length,
-          };
-
-          const maxCount = Math.max(...Object.values(scoreRanges));
-
-          return (
-            <div key={player.id} className="mb-6 last:mb-0">
-              <h4 className="text-white font-medium mb-3">{player.name}</h4>
-              <div className="space-y-2">
-                {Object.entries(scoreRanges).map(([range, count]) => (
-                  <div key={range} className="flex items-center">
-                    <div className="w-16 text-gray-300 text-sm">{range}</div>
-                    <div className="flex-1 bg-white/10 rounded-full h-4 mx-3">
-                      <div
-                        className="bg-darts-green h-4 rounded-full transition-all duration-300"
-                        style={{ width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%' }}
-                      ></div>
-                    </div>
-                    <div className="w-8 text-white text-sm text-right">{count}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      )}
     </div>
   );
 
@@ -374,10 +293,10 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
             ← Back to History
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">
-            {match.settings.players.map(p => p.name).join(' vs ')}
+            {match.config.players.map(p => p.name).join(' vs ')}
           </h1>
           <p className="text-gray-300">
-            {new Date(match.timestamp).toLocaleDateString()} • {getMatchResult()}
+            {new Date(match.created_at).toLocaleDateString()} • {getMatchResult()}
           </p>
         </div>
 
@@ -385,8 +304,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
         <div className="flex space-x-1 mb-6 bg-white/10 rounded-lg p-1">
           {[
             { key: 'overview', label: 'Overview' },
-            { key: 'legs', label: 'Leg by Leg' },
-            { key: 'stats', label: 'Statistics' }
+            { key: 'legs', label: 'Leg Details' }
           ].map(tab => (
             <button
               key={tab.key}
@@ -405,7 +323,6 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
         {/* Tab Content */}
         {selectedTab === 'overview' && renderOverview()}
         {selectedTab === 'legs' && renderLegs()}
-        {selectedTab === 'stats' && renderStats()}
       </div>
     </div>
   );

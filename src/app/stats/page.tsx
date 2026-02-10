@@ -2,59 +2,55 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlayerProfile } from '@/types/game';
-import { getPlayerProfiles } from '@/utils/localStorage';
+import { PlayerStats } from '@/types/database';
+import { getPlayerStats, getHeadToHeadStats } from '@/utils/database';
 
 export default function StatsPage() {
-  const [profiles, setProfiles] = useState<PlayerProfile[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<PlayerProfile | null>(null);
+  const [profiles, setProfiles] = useState<PlayerStats[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'average' | 'wins' | 'games'>('name');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const playerProfiles = getPlayerProfiles();
-    setProfiles(playerProfiles);
+    loadPlayerStats();
   }, []);
+
+  const loadPlayerStats = async () => {
+    try {
+      const stats = await getPlayerStats();
+      setProfiles(stats);
+    } catch (error) {
+      console.error('Failed to load player stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const sortedProfiles = [...profiles].sort((a, b) => {
     switch (sortBy) {
       case 'name':
         return a.name.localeCompare(b.name);
       case 'average':
-        return b.stats.bestAverage - a.stats.bestAverage;
+        return b.overall_average - a.overall_average;
       case 'wins':
-        return b.stats.gamesWon - a.stats.gamesWon;
+        return b.matches_won - a.matches_won;
       case 'games':
-        return b.stats.gamesPlayed - a.stats.gamesPlayed;
+        return b.matches_played - a.matches_played;
       default:
         return 0;
     }
   });
 
-  const getWinRate = (profile: PlayerProfile): number => {
-    if (profile.stats.gamesPlayed === 0) return 0;
-    return Math.round((profile.stats.gamesWon / profile.stats.gamesPlayed) * 100);
-  };
-
-  const getOverallAverage = (profile: PlayerProfile): number => {
-    if (profile.stats.totalDartsThrown === 0) return 0;
-    return Math.round(((profile.stats.totalScore / profile.stats.totalDartsThrown) * 3) * 100) / 100;
-  };
-
-  const getHeadToHeadSummary = (profile: PlayerProfile) => {
-    const opponents = Object.keys(profile.headToHead);
-    if (opponents.length === 0) return null;
-
-    return opponents.map(opponentId => {
-      const opponent = profiles.find(p => p.id === opponentId);
-      const record = profile.headToHead[opponentId];
-      return {
-        opponentName: opponent?.name || 'Unknown',
-        wins: record.wins,
-        losses: record.losses,
-        total: record.wins + record.losses
-      };
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-darts-green border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading player statistics...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (profiles.length === 0) {
     return (
@@ -116,15 +112,15 @@ export default function StatsPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-300">Games Played:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.stats.gamesPlayed}</span>
+                    <span className="text-white font-semibold">{selectedPlayer.matches_played}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-300">Games Won:</span>
-                    <span className="text-darts-green font-semibold">{selectedPlayer.stats.gamesWon}</span>
+                    <span className="text-darts-green font-semibold">{selectedPlayer.matches_won}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-300">Win Rate:</span>
-                    <span className="text-white font-semibold">{getWinRate(selectedPlayer)}%</span>
+                    <span className="text-white font-semibold">{selectedPlayer.win_percentage}%</span>
                   </div>
                 </div>
               </div>
@@ -134,72 +130,49 @@ export default function StatsPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">Scoring</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Best Average:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.stats.bestAverage.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-300">Overall Average:</span>
-                    <span className="text-white font-semibold">{getOverallAverage(selectedPlayer).toFixed(2)}</span>
+                    <span className="text-white font-semibold">{selectedPlayer.overall_average.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-300">Highest Score:</span>
-                    <span className="text-yellow-400 font-semibold">{selectedPlayer.stats.highestScore}</span>
+                    <span className="text-yellow-400 font-semibold">{selectedPlayer.highest_score}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Highest Checkout:</span>
-                    <span className="text-yellow-400 font-semibold">{selectedPlayer.stats.highestCheckout}</span>
+                    <span className="text-gray-300">100+ Scores:</span>
+                    <span className="text-blue-400 font-semibold">{selectedPlayer.scores_100_plus}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">140+ Scores:</span>
+                    <span className="text-blue-400 font-semibold">{selectedPlayer.scores_140_plus}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">180s:</span>
+                    <span className="text-yellow-400 font-semibold">{selectedPlayer.scores_180}</span>
                   </div>
                 </div>
               </div>
 
               {/* Dart Stats */}
               <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Dart Statistics</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Statistics</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Total Darts:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.stats.totalDartsThrown.toLocaleString()}</span>
+                    <span className="text-gray-300">Total Throws:</span>
+                    <span className="text-white font-semibold">{selectedPlayer.total_throws.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-300">Total Score:</span>
-                    <span className="text-white font-semibold">{selectedPlayer.stats.totalScore.toLocaleString()}</span>
+                    <span className="text-white font-semibold">{selectedPlayer.total_score.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Successful Checkouts:</span>
+                    <span className="text-darts-green font-semibold">{selectedPlayer.successful_checkouts}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Head-to-Head */}
-            {getHeadToHeadSummary(selectedPlayer) && (
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Head-to-Head Records</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {getHeadToHeadSummary(selectedPlayer)!.map((record, idx) => (
-                    <div key={idx} className="bg-white/5 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-medium">{record.opponentName}</span>
-                        <span className="text-gray-300 text-sm">{record.total} games</span>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center">
-                          <span className="text-darts-green font-semibold">{record.wins}W</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-darts-red font-semibold">{record.losses}L</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-white/10 rounded-full h-2">
-                            <div
-                              className="bg-darts-green h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${(record.wins / record.total) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Note: Head-to-head stats could be added here with additional queries */}
           </div>
         ) : (
           /* Players List View */
@@ -247,19 +220,19 @@ export default function StatsPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-300">Games:</span>
-                      <span className="text-white">{profile.stats.gamesPlayed}</span>
+                      <span className="text-white">{profile.matches_played}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-300">Win Rate:</span>
-                      <span className="text-darts-green">{getWinRate(profile)}%</span>
+                      <span className="text-darts-green">{profile.win_percentage}%</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Best Avg:</span>
-                      <span className="text-white">{profile.stats.bestAverage.toFixed(1)}</span>
+                      <span className="text-gray-300">Avg:</span>
+                      <span className="text-white">{profile.overall_average.toFixed(1)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-300">High Score:</span>
-                      <span className="text-yellow-400">{profile.stats.highestScore}</span>
+                      <span className="text-yellow-400">{profile.highest_score}</span>
                     </div>
                   </div>
 

@@ -50,10 +50,25 @@ A professional darts scoring app built with Next.js 14, designed for mobile-firs
 - **Framework**: Next.js 14 with App Router
 - **Styling**: Tailwind CSS with custom darts theme
 - **Language**: TypeScript for type safety
-- **Storage**: localStorage (no backend required)
+- **Backend**: Supabase (PostgreSQL database)
+- **Authentication**: None (anonymous access)
 - **PWA**: Manifest for mobile app-like experience
 
 ## Getting Started
+
+### 1. Database Setup
+
+This app uses Supabase as the backend. You'll need to:
+
+1. Run the SQL migration in `supabase-migration.sql` in your Supabase project's SQL Editor
+2. Create a `.env.local` file with your Supabase credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 2. Local Development
 
 ```bash
 # Install dependencies
@@ -70,6 +85,17 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+### 3. Database Schema
+
+The app uses the following tables (all prefixed with `darts_`):
+- `darts_players` - Player profiles (just name, no auth)
+- `darts_matches` - Match configurations and status
+- `darts_match_players` - Links players to matches
+- `darts_legs` - Individual legs within matches  
+- `darts_throws` - Individual dart throws/scores
+
+All tables allow anonymous access via Row Level Security policies.
 
 ## Deployment
 

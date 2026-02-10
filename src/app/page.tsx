@@ -2,19 +2,47 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getCurrentMatch, getMatchHistory, getPlayerProfiles } from '@/utils/localStorage';
-import { Match } from '@/types/game';
+import { getCurrentMatch, getMatchHistory, getPlayerStats } from '@/utils/database';
+import { DbMatch, MatchSummary } from '@/types/database';
 
 export default function HomePage() {
-  const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
-  const [recentMatches, setRecentMatches] = useState<Match[]>([]);
+  const [currentMatch, setCurrentMatch] = useState<DbMatch | null>(null);
+  const [recentMatches, setRecentMatches] = useState<MatchSummary[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setCurrentMatch(getCurrentMatch());
-    setRecentMatches(getMatchHistory().slice(0, 3));
-    setPlayerCount(getPlayerProfiles().length);
+    async function loadData() {
+      try {
+        const [current, history, playerStats] = await Promise.all([
+          getCurrentMatch(),
+          getMatchHistory(),
+          getPlayerStats()
+        ]);
+        
+        setCurrentMatch(current);
+        setRecentMatches(history.slice(0, 3));
+        setPlayerCount(playerStats.length);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-darts-green border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-darts-dark via-darts-navy to-darts-accent">
@@ -38,9 +66,9 @@ export default function HomePage() {
             </h2>
             <div className="flex items-center justify-between">
               <div className="text-gray-300">
-                <p className="text-sm">Players: {currentMatch.settings.players.map(p => p.name).join(', ')}</p>
+                <p className="text-sm">Players: {currentMatch.config.players.map(p => p.name).join(', ')}</p>
                 <p className="text-xs opacity-75">
-                  Started: {new Date(currentMatch.timestamp).toLocaleString()}
+                  Started: {new Date(currentMatch.created_at).toLocaleString()}
                 </p>
               </div>
               <Link 
@@ -112,12 +140,12 @@ export default function HomePage() {
                 <div key={match.id} className="flex items-center justify-between py-2 px-3 bg-white/5 rounded-lg">
                   <div>
                     <p className="text-white text-sm font-medium">
-                      {match.settings.players.map(p => p.name).join(' vs ')}
+                      {match.players}
                     </p>
                     <p className="text-gray-400 text-xs">
-                      {new Date(match.timestamp).toLocaleDateString()} •{' '}
-                      {match.winnerId ? 
-                        `Won by ${match.settings.players.find(p => p.id === match.winnerId)?.name}` : 
+                      {new Date(match.created_at).toLocaleDateString()} •{' '}
+                      {match.winner_name ? 
+                        `Won by ${match.winner_name}` : 
                         'In Progress'
                       }
                     </p>
