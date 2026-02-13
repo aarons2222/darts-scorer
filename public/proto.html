@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoreboard Proto</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: system-ui, sans-serif; padding: 10px; width: 100%; }
+
+.controls {
+  background: #2a2a4a; border-radius: 12px; padding: 12px 14px; margin-bottom: 24px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; width: 100%; max-width: 580px; max-height: 50vh; overflow-y: auto;
+}
+@media (max-width: 500px) {
+  .controls { grid-template-columns: 1fr; padding: 10px; }
+}
+.controls h3 { grid-column: 1/-1; color: #3b82f6; font-size: 13px; margin: 6px 0 2px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+.controls label { color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.controls label span.val { color: #3b82f6; font-weight: 900; min-width: 32px; text-align: right; font-size: 11px; }
+.controls input[type=range] { flex: 1; accent-color: #3b82f6; height: 16px; }
+.controls .toggle { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 600; }
+.controls .toggle input { accent-color: #3b82f6; width: 16px; height: 16px; }
+.controls .export-btn { grid-column: 1/-1; margin-top: 6px; padding: 8px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.controls .export-btn:hover { background: #2563eb; }
+.export-output { grid-column: 1/-1; background: #1a1a2e; color: #4ade80; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 10px; display: none; white-space: pre; max-height: 100px; overflow: auto; }
+
+/* The wrapper is just for centering */
+.wrapper { position: relative; max-width: 100%; overflow: visible; }
+
+/* The board is the card — everything is positioned relative to it */
+.board {
+  position: relative;
+  background: linear-gradient(145deg, #1e1e3e, #0e0e24);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  overflow: visible; /* circles can overflow */
+}
+
+/* Red/blue background layer — fills entire card, clipped to rounded corners */
+.bg-layer {
+  position: absolute; inset: 0; overflow: hidden; z-index: 0;
+  pointer-events: none;
+}
+.bg-layer svg { display: block; width: 100%; height: 100%; }
+
+/* Concave dark overlay */
+.concave-layer {
+  position: absolute; z-index: 1; left: 0; right: 0;
+  pointer-events: none;
+}
+.concave-layer svg { width: 100%; height: 100%; }
+
+/* Name row */
+.names {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; align-items: center;
+}
+.names span {
+  flex: 1; text-align: center; color: white; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Centre panel */
+.centre-wrap {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  z-index: 3; text-align: center;
+}
+.centre-wrap .first-to { color: rgba(255,255,255,0.55); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.centre-wrap .row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 3px; }
+.centre-wrap .num { color: white; font-weight: 900; font-variant-numeric: tabular-nums; }
+.centre-wrap .num.l { text-align: right; }
+.centre-wrap .num.r { text-align: left; }
+.centre-wrap .lbl { color: rgba(255,255,255,0.4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; text-align: center; }
+
+/* Bottom bar */
+.bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(to right, rgba(130,20,20,0.25), rgba(45,10,70,0.18), rgba(20,45,150,0.25));
+}
+.bottom-bar span { color: rgba(255,255,255,0.3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; }
+
+/* Circles — positioned relative to board */
+.circle {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 4;
+}
+.circle svg.ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.circle .inner {
+  position: absolute; inset: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 35%, #251530, #08081a);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+}
+.circle .inner span { color: white; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.circle .dart { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <h3>📐 Card</h3>
+  <label>Width <input type="range" id="cardW" min="350" max="650" value="520"> <span class="val" id="cardW_v"></span></label>
+  <label>Height <input type="range" id="cardH" min="120" max="320" value="240"> <span class="val" id="cardH_v"></span></label>
+  <label>Corners <input type="range" id="borR" min="0" max="40" value="18"> <span class="val" id="borR_v"></span></label>
+
+  <h3>⭕ Circles</h3>
+  <label>Diameter <input type="range" id="circD" min="100" max="280" value="180"> <span class="val" id="circD_v"></span></label>
+  <label>Offset X <input type="range" id="circX" min="-80" max="80" value="35"> <span class="val" id="circX_v"></span></label>
+  <label>Ring Width <input type="range" id="ringW" min="4" max="24" value="12"> <span class="val" id="ringW_v"></span></label>
+  <label>Score Font <input type="range" id="scoreS" min="28" max="80" value="56"> <span class="val" id="scoreS_v"></span></label>
+  <label>Circle Y <input type="range" id="circY" min="-60" max="60" value="0"> <span class="val" id="circY_v"></span></label>
+  <label>Dart X <input type="range" id="dartX" min="-80" max="80" value="0"> <span class="val" id="dartX_v"></span></label>
+  <label>Dart Y <input type="range" id="dartY" min="-80" max="80" value="0"> <span class="val" id="dartY_v"></span></label>
+  <label>Dart Size <input type="range" id="dartS" min="12" max="60" value="24"> <span class="val" id="dartS_v"></span></label>
+  <label>Dart Rotate <input type="range" id="dartR" min="0" max="360" value="0"> <span class="val" id="dartR_v"></span></label>
+
+  <h3>🏷️ Banner</h3>
+  <label>Height <input type="range" id="banH" min="20" max="80" value="44"> <span class="val" id="banH_v"></span></label>
+  <label>Name Font <input type="range" id="nameS" min="14" max="40" value="22"> <span class="val" id="nameS_v"></span></label>
+  <label>Name Y <input type="range" id="nameY" min="-20" max="20" value="0"> <span class="val" id="nameY_v"></span></label>
+
+  <h3>📊 Centre</h3>
+  <label>First To Font <input type="range" id="ftS" min="8" max="20" value="11"> <span class="val" id="ftS_v"></span></label>
+  <label>Numbers Font <input type="range" id="numS" min="16" max="40" value="26"> <span class="val" id="numS_v"></span></label>
+  <label>Label Font <input type="range" id="lblS" min="6" max="18" value="10"> <span class="val" id="lblS_v"></span></label>
+  <label>Label Width <input type="range" id="lblW" min="20" max="60" value="40"> <span class="val" id="lblW_v"></span></label>
+  <label>Centre Y <input type="range" id="centreY" min="-40" max="40" value="0"> <span class="val" id="centreY_v"></span></label>
+  <label>Row Gap <input type="range" id="rowGap" min="0" max="20" value="3"> <span class="val" id="rowGap_v"></span></label>
+  <label>Num Gap <input type="range" id="numGap" min="0" max="30" value="4"> <span class="val" id="numGap_v"></span></label>
+
+  <h3>🔻 Bottom Bar</h3>
+  <label>Height <input type="range" id="bottomH" min="16" max="50" value="28"> <span class="val" id="bottomH_v"></span></label>
+  <label>Font Size <input type="range" id="botS" min="6" max="16" value="9"> <span class="val" id="botS_v"></span></label>
+
+  <h3>🎨 Concave BG</h3>
+  <label>Depth <input type="range" id="concave" min="0" max="120" value="60"> <span class="val" id="concave_v"></span></label>
+
+  <h3>👁️ Show/Hide</h3>
+  <label class="toggle"><input type="checkbox" id="showBanner" checked> Banner BG</label>
+  <label class="toggle"><input type="checkbox" id="showCircles" checked> Circles</label>
+  <label class="toggle"><input type="checkbox" id="showCentre" checked> Centre</label>
+  <label class="toggle"><input type="checkbox" id="showBottom" checked> Bottom Bar</label>
+  <label class="toggle"><input type="checkbox" id="showConcave"> Concave BG</label>
+  <label class="toggle"><input type="checkbox" id="showDart" checked> Dart</label>
+  <label class="toggle"><input type="checkbox" id="showRings" checked> Rings</label>
+  <label class="toggle"><input type="checkbox" id="showNames" checked> Names</label>
+
+  <button class="export-btn" onclick="doExport()">📋 Copy Values</button>
+  <div class="export-output" id="exportOut"></div>
+</div>
+
+<div class="wrapper" id="wrapper">
+  <div class="board" id="board">
+
+    <!-- Red/blue banner — two simple divs side by side -->
+    <div id="bgLayer" style="position:absolute;top:0;left:0;right:0;display:flex;z-index:1;pointer-events:none;overflow:hidden;height:44px;">
+      <div id="bannerL" style="flex:1;background:linear-gradient(to right,#dc2626,#c42020);"></div>
+      <div id="bannerR" style="flex:1;background:linear-gradient(to right,#2563eb,#1d4ed8);"></div>
+    </div>
+
+    <!-- Concave overlay -->
+    <div class="concave-layer" id="concaveLayer">
+      <svg preserveAspectRatio="none" id="concaveSvg">
+        <path id="concavePath" fill="#0e0e24"/>
+      </svg>
+    </div>
+
+    <!-- Names -->
+    <div class="names" id="nameRow">
+      <span id="nameL">LITTLER</span>
+      <span id="nameR">PRICE</span>
+    </div>
+
+    <!-- Centre -->
+    <div class="centre-wrap" id="centrePanel">
+      <div class="first-to" id="firstTo">FIRST TO 5</div>
+      <div class="row"><span class="num l">0</span><span class="lbl">SETS</span><span class="num r">0</span></div>
+      <div class="row"><span class="num l">0</span><span class="lbl">LEGS</span><span class="num r">0</span></div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="bottom-bar" id="bottomBar"><span id="botText">DARTS SCORER</span></div>
+
+    <!-- Left circle -->
+    <div class="circle" id="circL">
+      <svg class="ring" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#dc2626" stroke-width="12" opacity="0.35" id="ringLbg"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#ef4444" stroke-width="12"
+          stroke-dasharray="314" stroke-dashoffset="60" stroke-linecap="butt"
+          style="filter: drop-shadow(0 0 16px rgba(239,68,68,0.8))" id="ringLfg"/>
+      </svg>
+      <div class="inner"><span id="scoreL">322</span></div>
+      <img class="dart" id="dartIcon" src="/dart.png" alt="">
+    </div>
+
+    <!-- Right circle -->
+    <div class="circle" id="circR">
+      <svg class="ring" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#1d4ed8" stroke-width="12" opacity="0.35" id="ringRbg"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="12"
+          stroke-dasharray="314" stroke-dashoffset="140" stroke-linecap="butt"
+          style="filter: drop-shadow(0 0 16px rgba(59,130,246,0.8))" id="ringRfg"/>
+      </svg>
+      <div class="inner"><span id="scoreR">182</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const sliders = ['cardW','cardH','circD','circX','circY','dartX','dartY','dartS','dartR','banH','borR','ringW','scoreS','nameS','nameY','ftS','numS','lblS','lblW','centreY','rowGap','numGap','bottomH','botS','concave'];
+const toggles = ['showBanner','showCircles','showCentre','showBottom','showConcave','showDart','showRings','showNames'];
+
+function update() {
+  const v = {};
+  sliders.forEach(id => {
+    v[id] = parseInt(document.getElementById(id).value);
+    document.getElementById(id + '_v').textContent = v[id];
+  });
+  const t = {};
+  toggles.forEach(id => t[id] = document.getElementById(id).checked);
+
+  const W = v.cardW, H = v.cardH;
+
+  // Board
+  const board = document.getElementById('board');
+  board.style.width = W + 'px';
+  board.style.height = H + 'px';
+  board.style.borderRadius = v.borR + 'px';
+
+  // Wrapper just needs to be wide enough for overflow
+  document.getElementById('wrapper').style.width = (W + 100) + 'px';
+  document.getElementById('wrapper').style.padding = '30px 50px';
+
+  // Show/hide
+  document.getElementById('bgLayer').style.display = t.showBanner ? 'flex' : 'none';
+  document.getElementById('circL').style.display = t.showCircles ? '' : 'none';
+  document.getElementById('circR').style.display = t.showCircles ? '' : 'none';
+  document.getElementById('centrePanel').style.display = t.showCentre ? '' : 'none';
+  document.getElementById('bottomBar').style.display = t.showBottom ? 'flex' : 'none';
+  document.getElementById('concaveLayer').style.display = t.showConcave ? '' : 'none';
+  document.getElementById('dartIcon').style.display = t.showDart ? '' : 'none';
+  document.getElementById('nameRow').style.display = t.showNames ? 'flex' : 'none';
+  ['ringLbg','ringLfg','ringRbg','ringRfg'].forEach(id => {
+    document.getElementById(id).style.display = t.showRings ? '' : 'none';
+  });
+
+  // Banner — two divs side by side, same height
+  const bH = v.banH;
+  const mid = Math.round(W / 2);
+  const bgLayer = document.getElementById('bgLayer');
+  bgLayer.style.height = bH + 'px';
+  bgLayer.style.borderRadius = `${v.borR}px ${v.borR}px 0 0`;
+
+  // Names
+  const nameRow = document.getElementById('nameRow');
+  nameRow.style.height = bH + 'px';
+  nameRow.style.paddingTop = v.nameY + 'px';
+  document.getElementById('nameL').style.fontSize = v.nameS + 'px';
+  document.getElementById('nameR').style.fontSize = v.nameS + 'px';
+
+  // Circles — positioned relative to board
+  // circX = how far the circle CENTRE is from the board edge (positive = inside, negative = outside)
+  const circR2 = v.circD / 2;
+  const circL = document.getElementById('circL');
+  const circR = document.getElementById('circR');
+  circL.style.width = circR.style.width = v.circD + 'px';
+  circL.style.height = circR.style.height = v.circD + 'px';
+  // Left circle: centre at circX from left edge
+  circL.style.left = (v.circX - circR2) + 'px';
+  circL.style.right = 'auto';
+  // Right circle: centre at circX from right edge
+  circR.style.right = (v.circX - circR2) + 'px';
+  circR.style.left = 'auto';
+  // Y offset
+  circL.style.transform = `translateY(calc(-50% + ${v.circY}px))`;
+  circR.style.transform = `translateY(calc(-50% + ${v.circY}px))`;
+  // Dart position
+  const dart = document.getElementById('dartIcon');
+  dart.style.left = `calc(50% + ${v.dartX}px)`;
+  dart.style.bottom = (-v.dartY) + 'px';
+  dart.style.width = v.dartS + 'px';
+  dart.style.height = v.dartS + 'px';
+  dart.style.transform = `translateX(-50%) rotate(${v.dartR}deg)`;
+
+  // Ring stroke
+  ['ringLbg','ringLfg','ringRbg','ringRfg'].forEach(id => document.getElementById(id).setAttribute('stroke-width', v.ringW));
+
+  // Score font
+  document.getElementById('scoreL').style.fontSize = v.scoreS + 'px';
+  document.getElementById('scoreR').style.fontSize = v.scoreS + 'px';
+
+  // Centre panel
+  const cp = document.getElementById('centrePanel');
+  cp.style.top = (H / 2 + v.centreY) + 'px';
+  cp.style.transform = 'translate(-50%, -50%)';
+  document.getElementById('firstTo').style.fontSize = v.ftS + 'px';
+  document.querySelectorAll('.num').forEach(el => { el.style.fontSize = v.numS + 'px'; el.style.width = Math.round(v.numS * 1.1) + 'px'; });
+  document.querySelectorAll('.lbl').forEach(el => { el.style.fontSize = v.lblS + 'px'; el.style.width = v.lblW + 'px'; });
+  document.querySelectorAll('.row').forEach(el => { el.style.gap = v.numGap + 'px'; el.style.marginBottom = v.rowGap + 'px'; });
+  document.getElementById('firstTo').style.marginBottom = (v.rowGap + 4) + 'px';
+
+  // Bottom bar
+  document.getElementById('bottomBar').style.height = v.bottomH + 'px';
+  document.getElementById('bottomBar').style.borderRadius = `0 0 ${v.borR}px ${v.borR}px`;
+  document.getElementById('botText').style.fontSize = v.botS + 'px';
+
+  // Concave overlay
+  const cTop = bH;
+  const cH = H - bH - v.bottomH;
+  if (cH > 0) {
+    const cl = document.getElementById('concaveLayer');
+    cl.style.top = cTop + 'px';
+    cl.style.height = cH + 'px';
+    document.getElementById('concaveSvg').setAttribute('viewBox', `0 0 ${W} ${cH}`);
+    const cc = v.concave;
+    document.getElementById('concavePath').setAttribute('d',
+      `M0,0 L${W},0 L${W},${cH} L0,${cH} Z`
+    );
+  }
+}
+
+sliders.forEach(id => document.getElementById(id).addEventListener('input', update));
+toggles.forEach(id => document.getElementById(id).addEventListener('change', update));
+update();
+
+function doExport() {
+  const v = {};
+  sliders.forEach(id => v[id] = parseInt(document.getElementById(id).value));
+  toggles.forEach(id => v[id] = document.getElementById(id).checked);
+  const txt = JSON.stringify(v, null, 2);
+  navigator.clipboard.writeText(txt);
+  const out = document.getElementById('exportOut');
+  out.style.display = 'block';
+  out.textContent = '✅ Copied!\n' + txt;
+}
+</script>
+</body>
+</html>
