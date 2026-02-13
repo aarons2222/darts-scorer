@@ -124,7 +124,7 @@ SELECT
     w.name as winner_name,
     COUNT(DISTINCT l.id) as total_legs,
     COUNT(DISTINCT mp.player_id) as player_count,
-    STRING_AGG(DISTINCT p.name, ' vs ' ORDER BY mp.position) as players
+    STRING_AGG(p.name, ' vs ' ORDER BY mp.position) as players
 FROM darts_matches m
 LEFT JOIN darts_players w ON m.winner_id = w.id
 LEFT JOIN darts_match_players mp ON m.id = mp.match_id

@@ -8,14 +8,14 @@ import { GameMatch, GameLeg, GamePlayer } from '@/types/game';
 // Player operations
 export async function createOrGetPlayer(name: string): Promise<DbPlayer> {
   // First, try to find existing player by name
-  const { data: existingPlayer, error: findError } = await (supabase as any)
+  const { data: existingPlayers, error: findError } = await supabase
     .from('darts_players')
     .select('*')
     .eq('name', name)
-    .single();
+    .limit(1);
 
-  if (existingPlayer && !findError) {
-    return existingPlayer;
+  if (existingPlayers && existingPlayers.length > 0) {
+    return existingPlayers[0];
   }
 
   // If not found, create new player
@@ -296,8 +296,9 @@ export function convertDbMatchToGameMatch(dbMatch: DbMatch): GameMatch {
   const legs: GameLeg[] = [];
   
   // Group legs and build game state
-  if (dbMatch.legs) {
-    dbMatch.legs.forEach((leg: any) => {
+  const legs_data = (dbMatch as any).darts_legs || (dbMatch as any).legs || [];
+  if (legs_data.length > 0) {
+    legs_data.forEach((leg: any) => {
       const throws = leg.darts_throws || [];
       const players: GamePlayer[] = dbMatch.config.players.map(configPlayer => {
         const playerThrows = throws
@@ -320,14 +321,37 @@ export function convertDbMatchToGameMatch(dbMatch: DbMatch): GameMatch {
         };
       });
 
+      // Calculate current player based on throw order
+      // Sort all throws by created_at to find who went last
+      const allThrowsSorted = [...throws].sort((a: any, b: any) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      const throwCounts = players.map(p => p.throws.length);
+      const minThrows = Math.min(...throwCounts);
+      const maxThrows = Math.max(...throwCounts);
+      let currentPlayerIdx = 0;
+      
+      if (allThrowsSorted.length === 0) {
+        // No throws yet — player 0 starts
+        currentPlayerIdx = 0;
+      } else if (minThrows < maxThrows) {
+        // Unequal throws — player with fewer goes next
+        currentPlayerIdx = throwCounts.indexOf(minThrows);
+      } else {
+        // Equal throws — find who threw last and pick the next player
+        const lastThrow = allThrowsSorted[allThrowsSorted.length - 1];
+        const lastPlayerIdx = dbMatch.config.players.findIndex(p => p.id === lastThrow.player_id);
+        currentPlayerIdx = (lastPlayerIdx + 1) % players.length;
+      }
+
       legs.push({
         id: leg.id,
         setNumber: leg.set_number,
         legNumber: leg.leg_number,
         players,
         winnerId: leg.winner_id || undefined,
-        currentPlayerIndex: 0, // This would need to be calculated
-        currentRound: Math.max(...players.map(p => p.throws.length)) + 1,
+        currentPlayerIndex: currentPlayerIdx,
+        currentRound: Math.max(...throwCounts, 0) + 1,
         isCompleted: !!leg.winner_id
       });
     });

@@ -92,7 +92,7 @@ export default function SetupPage() {
   return (
     <div className="min-h-screen bg-darts-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-dartboard-cream mb-2 font-mono">🎯 MATCH SETUP</h1>
@@ -104,7 +104,7 @@ export default function SetupPage() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-dartboard-cream mb-4 font-mono">PLAYERS</h2>
               
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {players.map((player, index) => (
                   <div key={player.id} className="bg-darts-background border border-darts-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">

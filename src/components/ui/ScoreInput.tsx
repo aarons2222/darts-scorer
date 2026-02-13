@@ -51,14 +51,7 @@ export function ScoreInput({
   const isValidInput = currentScore >= 0 && currentScore <= maxScore;
   const canSubmit = isValidInput && currentScore > 0 && !disabled && !isSubmitting;
 
-  // Clear input after successful submission
-  useEffect(() => {
-    if (!isSubmitting && input && error === null) {
-      const timer = setTimeout(() => setInput(''), 100);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [isSubmitting, input, error]);
+  // No auto-clear — input is cleared explicitly on successful submit
 
   // Clear error after a few seconds
   useEffect(() => {
