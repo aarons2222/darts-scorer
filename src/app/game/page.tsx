@@ -114,7 +114,7 @@ function TVScoreboard({
         </div>
         {isActive && (
           <img src="/dart.png" alt="" style={{
-            position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)',
+            position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
             width: 24, height: 24, objectFit: 'contain',
           }} />
         )}
