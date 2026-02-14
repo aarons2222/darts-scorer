@@ -111,8 +111,8 @@ function TVScoreboard({
   const c1 = p1Color || '#dc2626';
   const c2 = p2Color || '#1d4ed8';
 
-  const ScoreCircle = ({ score, progress, baseHex, isActive, hasThrow }: { 
-    score: number; progress: number; baseHex: string; isActive: boolean; hasThrow: boolean 
+  const ScoreCircle = ({ score, progress, baseHex, isActive }: { 
+    score: number; progress: number; baseHex: string; isActive: boolean 
   }) => {
     const offset = circumference * (1 - progress);
     const bright = brighten(baseHex, 30);
@@ -137,12 +137,6 @@ function TVScoreboard({
             {score}
           </span>
         </div>
-        {hasThrow && (
-          <img src="/dart.png" alt="" style={{
-            position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
-            width: 24, height: 24, objectFit: 'contain',
-          }} />
-        )}
       </div>
     );
   };
@@ -166,12 +160,18 @@ function TVScoreboard({
 
           {/* Names */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: C.banH, zIndex: 2, display: 'flex', alignItems: 'center' }}>
-            <span style={{ flex: 1, textAlign: 'center', color: 'white', fontWeight: 900, fontSize: C.nameS, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'system-ui, sans-serif', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-              {p1Name}
-            </span>
-            <span style={{ flex: 1, textAlign: 'center', color: 'white', fontWeight: 900, fontSize: C.nameS, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'system-ui, sans-serif', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-              {p2Name}
-            </span>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              {hasTheThrow === 0 && <img src="/dart.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
+              <span style={{ color: 'white', fontWeight: 900, fontSize: C.nameS, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'system-ui, sans-serif', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                {p1Name}
+              </span>
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ color: 'white', fontWeight: 900, fontSize: C.nameS, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'system-ui, sans-serif', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                {p2Name}
+              </span>
+              {hasTheThrow === 1 && <img src="/dart.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />}
+            </div>
           </div>
 
           {/* Centre panel */}
@@ -216,10 +216,10 @@ function TVScoreboard({
 
         {/* Score circles — positioned relative to board */}
         <div style={{ position: 'absolute', left: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p1Score} progress={p1Progress} baseHex={c1} isActive={activePlayer === 0} hasThrow={hasTheThrow === 0} />
+          <ScoreCircle score={p1Score} progress={p1Progress} baseHex={c1} isActive={activePlayer === 0} />
         </div>
         <div style={{ position: 'absolute', right: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p2Score} progress={p2Progress} baseHex={c2} isActive={activePlayer === 1} hasThrow={hasTheThrow === 1} />
+          <ScoreCircle score={p2Score} progress={p2Progress} baseHex={c2} isActive={activePlayer === 1} />
         </div>
       </div>
     </div>
