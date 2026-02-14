@@ -8,11 +8,22 @@ import { generatePlayerId } from '@/utils/gameLogic';
 
 const STARTING_SCORES = [101, 301, 501, 701, 1001];
 
+const PLAYER_COLORS = [
+  { name: 'Red', value: '#dc2626', ring: '#ef4444', dark: '#2a1525' },
+  { name: 'Blue', value: '#1d4ed8', ring: '#3b82f6', dark: '#151535' },
+  { name: 'Green', value: '#16a34a', ring: '#22c55e', dark: '#152a1a' },
+  { name: 'Purple', value: '#7c3aed', ring: '#a78bfa', dark: '#1f1535' },
+  { name: 'Orange', value: '#ea580c', ring: '#f97316', dark: '#2a1a15' },
+  { name: 'Pink', value: '#db2777', ring: '#ec4899', dark: '#2a1520' },
+  { name: 'Cyan', value: '#0891b2', ring: '#06b6d4', dark: '#152530' },
+  { name: 'Gold', value: '#ca8a04', ring: '#eab308', dark: '#2a2515' },
+];
+
 export default function SetupPage() {
   const router = useRouter();
   const [players, setPlayers] = useState([
-    { id: generatePlayerId(), name: '', startingScore: 501 },
-    { id: generatePlayerId(), name: '', startingScore: 501 }
+    { id: generatePlayerId(), name: '', startingScore: 501, color: '#dc2626' },
+    { id: generatePlayerId(), name: '', startingScore: 501, color: '#1d4ed8' }
   ]);
   const [numberOfLegs, setNumberOfLegs] = useState(1);
   const [numberOfSets, setNumberOfSets] = useState<number | undefined>(undefined);
@@ -20,10 +31,13 @@ export default function SetupPage() {
   const [showCustomScore, setShowCustomScore] = useState<string>('');
 
   const addPlayer = () => {
+    const usedColors = players.map(p => p.color);
+    const nextColor = PLAYER_COLORS.find(c => !usedColors.includes(c.value))?.value || '#16a34a';
     setPlayers([...players, { 
       id: generatePlayerId(), 
       name: '', 
-      startingScore: 501 
+      startingScore: 501,
+      color: nextColor
     }]);
   };
 
@@ -33,7 +47,7 @@ export default function SetupPage() {
     }
   };
 
-  const updatePlayer = (index: number, field: 'name' | 'startingScore', value: string | number) => {
+  const updatePlayer = (index: number, field: 'name' | 'startingScore' | 'color', value: string | number) => {
     const updated = [...players];
     updated[index] = { ...updated[index], [field]: value };
     setPlayers(updated);
@@ -69,6 +83,7 @@ export default function SetupPage() {
           id: dbPlayer.id,
           name: dbPlayer.name,
           startingScore: players[index].startingScore,
+          color: players[index].color,
         })),
       };
 
@@ -128,6 +143,26 @@ export default function SetupPage() {
                         className="w-full bg-darts-surface border-2 border-darts-border rounded-lg px-4 py-3 text-dartboard-cream placeholder-dartboard-cream/40 focus:outline-none focus:border-dartboard-red font-mono"
                       />
                       
+                      <div>
+                        <label className="block text-dartboard-cream/70 text-sm mb-2 font-mono">COLOUR</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {PLAYER_COLORS.map(c => (
+                            <button
+                              key={c.value}
+                              onClick={() => updatePlayer(index, 'color', c.value)}
+                              className="w-8 h-8 rounded-full border-2 transition-all"
+                              style={{
+                                backgroundColor: c.value,
+                                borderColor: player.color === c.value ? '#fff' : 'transparent',
+                                transform: player.color === c.value ? 'scale(1.15)' : 'scale(1)',
+                                boxShadow: player.color === c.value ? `0 0 12px ${c.value}` : 'none'
+                              }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
                       <div>
                         <label className="block text-dartboard-cream/70 text-sm mb-2 font-mono">STARTING SCORE</label>
                         <div className="grid grid-cols-3 gap-2 mb-2">

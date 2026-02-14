@@ -70,11 +70,13 @@ function TVScoreboard({
   p1Name, p2Name, p1Score, p2Score, 
   p1StartScore, p2StartScore,
   p1Sets, p2Sets, p1Legs, p2Legs,
+  p1Color, p2Color,
   firstTo, hasSets, activePlayer, hasTheThrow, checkoutText
 }: {
   p1Name: string; p2Name: string; p1Score: number; p2Score: number;
   p1StartScore: number; p2StartScore: number;
   p1Sets: number; p2Sets: number; p1Legs: number; p2Legs: number;
+  p1Color?: string; p2Color?: string;
   firstTo: number; hasSets: boolean; activePlayer: 0 | 1; hasTheThrow: 0 | 1; checkoutText?: string;
 }) {
   const p1Progress = p1Score / p1StartScore;
@@ -86,26 +88,49 @@ function TVScoreboard({
   const circumference = 2 * Math.PI * radius;
   const circR2 = C.circD / 2;
 
-  const ScoreCircle = ({ score, progress, color, isActive, hasThrow }: { 
-    score: number; progress: number; color: 'red' | 'blue'; isActive: boolean; hasThrow: boolean 
+  // Derive colour variants from hex
+  const hexToRgb = (hex: string) => {
+    const h = hex.replace('#', '');
+    return `${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)}`;
+  };
+  const brighten = (hex: string, amt: number) => {
+    const h = hex.replace('#', '');
+    const r = Math.min(255, parseInt(h.slice(0,2),16) + amt);
+    const g = Math.min(255, parseInt(h.slice(2,4),16) + amt);
+    const b = Math.min(255, parseInt(h.slice(4,6),16) + amt);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  };
+  const darken = (hex: string) => {
+    const h = hex.replace('#', '');
+    const r = Math.max(0, Math.floor(parseInt(h.slice(0,2),16) * 0.15));
+    const g = Math.max(0, Math.floor(parseInt(h.slice(2,4),16) * 0.15));
+    const b = Math.max(0, Math.floor(parseInt(h.slice(4,6),16) * 0.15));
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  };
+
+  const c1 = p1Color || '#dc2626';
+  const c2 = p2Color || '#1d4ed8';
+
+  const ScoreCircle = ({ score, progress, baseHex, isActive, hasThrow }: { 
+    score: number; progress: number; baseHex: string; isActive: boolean; hasThrow: boolean 
   }) => {
     const offset = circumference * (1 - progress);
-    const baseColor = color === 'red' ? '#dc2626' : '#1d4ed8';
-    const brightColor = color === 'red' ? '#ef4444' : '#3b82f6';
-    const glowRgb = color === 'red' ? '239,68,68' : '59,130,246';
+    const bright = brighten(baseHex, 30);
+    const glowRgb = hexToRgb(bright);
+    const innerBg = darken(baseHex);
 
     return (
       <div style={{ width: C.circD, height: C.circD, position: 'relative' }}>
         <svg style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }} viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r={radius} fill="none" stroke={baseColor} strokeWidth={C.ringW} opacity="0.35" />
-          <circle cx="60" cy="60" r={radius} fill="none" stroke={brightColor} strokeWidth={C.ringW}
+          <circle cx="60" cy="60" r={radius} fill="none" stroke={baseHex} strokeWidth={C.ringW} opacity="0.35" />
+          <circle cx="60" cy="60" r={radius} fill="none" stroke={bright} strokeWidth={C.ringW}
             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="butt"
             style={{ transition: 'stroke-dashoffset 0.5s ease', filter: `drop-shadow(0 0 ${isActive ? 18 : 12}px rgba(${glowRgb},${isActive ? 0.9 : 0.7}))` }} />
         </svg>
         <div style={{
           position: 'absolute', inset: 16, borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `radial-gradient(circle at 35% 35%, ${color === 'red' ? '#2a1525' : '#151535'} 0%, #08081a 100%)`,
+          background: `radial-gradient(circle at 35% 35%, ${innerBg} 0%, #08081a 100%)`,
           boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.6)',
         }}>
           <span style={{ color: 'white', fontWeight: 900, fontSize: C.scoreS, fontFamily: 'system-ui, sans-serif', lineHeight: 1, fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 6px rgba(0,0,0,0.4)', opacity: isActive ? 1 : 0.35, transition: 'opacity 0.3s ease' }}>
@@ -133,10 +158,10 @@ function TVScoreboard({
           boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
           overflow: 'visible',
         }}>
-          {/* Red/blue banner */}
+          {/* Player colour banner */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: C.banH, display: 'flex', zIndex: 1, overflow: 'hidden', borderRadius: `${C.borR}px ${C.borR}px 0 0` }}>
-            <div style={{ flex: 1, background: 'linear-gradient(to right, #dc2626, #c42020)' }} />
-            <div style={{ flex: 1, background: 'linear-gradient(to right, #2563eb, #1d4ed8)' }} />
+            <div style={{ flex: 1, background: `linear-gradient(to right, ${brighten(c1, 10)}, ${c1})` }} />
+            <div style={{ flex: 1, background: `linear-gradient(to right, ${c2}, ${brighten(c2, 10)})` }} />
           </div>
 
           {/* Names */}
@@ -191,10 +216,10 @@ function TVScoreboard({
 
         {/* Score circles — positioned relative to board */}
         <div style={{ position: 'absolute', left: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p1Score} progress={p1Progress} color="red" isActive={activePlayer === 0} hasThrow={hasTheThrow === 0} />
+          <ScoreCircle score={p1Score} progress={p1Progress} baseHex={c1} isActive={activePlayer === 0} hasThrow={hasTheThrow === 0} />
         </div>
         <div style={{ position: 'absolute', right: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p2Score} progress={p2Progress} color="blue" isActive={activePlayer === 1} hasThrow={hasTheThrow === 1} />
+          <ScoreCircle score={p2Score} progress={p2Progress} baseHex={c2} isActive={activePlayer === 1} hasThrow={hasTheThrow === 1} />
         </div>
       </div>
     </div>
@@ -290,6 +315,8 @@ export default function GamePage() {
             p2Sets={game.setWins[players[1].id] || 0}
             p1Legs={game.legWins[players[0].id] || 0}
             p2Legs={game.legWins[players[1].id] || 0}
+            p1Color={match.config.players[0]?.color}
+            p2Color={match.config.players[1]?.color}
             firstTo={match.config.numberOfLegs}
             hasSets={hasMultipleSets}
             activePlayer={game.currentPlayerIndex as 0 | 1}

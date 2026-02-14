@@ -37,7 +37,7 @@ export interface GameMatch {
   config: {
     numberOfSets?: number;
     numberOfLegs: number;
-    players: Array<{ id: string; name: string; startingScore: number }>;
+    players: Array<{ id: string; name: string; startingScore: number; color?: string }>;
   };
   sets: GameSet[];
   currentSetIndex: number;
@@ -51,7 +51,7 @@ export interface GameMatch {
 export interface GameSettings {
   numberOfSets?: number;
   numberOfLegs: number;
-  players: { id: string; name: string; startingScore: number }[];
+  players: { id: string; name: string; startingScore: number; color?: string }[];
 }
 
 export type CheckoutSuggestion = {
