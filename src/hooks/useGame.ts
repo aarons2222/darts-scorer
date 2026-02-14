@@ -220,8 +220,8 @@ export function useGame(): UseGameResult {
       const wasCheckoutAttempt = isCheckoutAttempt(currentPlayer.currentScore);
       
       if (isBust(currentPlayer.currentScore, score)) {
-        // Bust - record the throw but don't change score
-        await addThrow(currentLeg.id, currentPlayer.id, currentLeg.currentRound, score, false);
+        // Bust - record throw with 0 score so it doesn't affect the total
+        await addThrow(currentLeg.id, currentPlayer.id, currentLeg.currentRound, 0, false);
         setError('BUST! Score remains unchanged.');
       } else {
         const newScore = currentPlayer.currentScore - score;
