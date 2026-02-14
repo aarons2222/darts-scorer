@@ -70,12 +70,12 @@ function TVScoreboard({
   p1Name, p2Name, p1Score, p2Score, 
   p1StartScore, p2StartScore,
   p1Sets, p2Sets, p1Legs, p2Legs,
-  firstTo, hasSets, activePlayer, checkoutText
+  firstTo, hasSets, activePlayer, hasTheThrow, checkoutText
 }: {
   p1Name: string; p2Name: string; p1Score: number; p2Score: number;
   p1StartScore: number; p2StartScore: number;
   p1Sets: number; p2Sets: number; p1Legs: number; p2Legs: number;
-  firstTo: number; hasSets: boolean; activePlayer: 0 | 1; checkoutText?: string;
+  firstTo: number; hasSets: boolean; activePlayer: 0 | 1; hasTheThrow: 0 | 1; checkoutText?: string;
 }) {
   const p1Progress = p1Score / p1StartScore;
   const p2Progress = p2Score / p2StartScore;
@@ -86,8 +86,8 @@ function TVScoreboard({
   const circumference = 2 * Math.PI * radius;
   const circR2 = C.circD / 2;
 
-  const ScoreCircle = ({ score, progress, color, isActive }: { 
-    score: number; progress: number; color: 'red' | 'blue'; isActive: boolean 
+  const ScoreCircle = ({ score, progress, color, isActive, hasThrow }: { 
+    score: number; progress: number; color: 'red' | 'blue'; isActive: boolean; hasThrow: boolean 
   }) => {
     const offset = circumference * (1 - progress);
     const baseColor = color === 'red' ? '#dc2626' : '#1d4ed8';
@@ -108,11 +108,11 @@ function TVScoreboard({
           background: `radial-gradient(circle at 35% 35%, ${color === 'red' ? '#2a1525' : '#151535'} 0%, #08081a 100%)`,
           boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.6)',
         }}>
-          <span style={{ color: 'white', fontWeight: 900, fontSize: C.scoreS, fontFamily: 'system-ui, sans-serif', lineHeight: 1, fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}>
+          <span style={{ color: 'white', fontWeight: 900, fontSize: C.scoreS, fontFamily: 'system-ui, sans-serif', lineHeight: 1, fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 6px rgba(0,0,0,0.4)', opacity: isActive ? 1 : 0.35, transition: 'opacity 0.3s ease' }}>
             {score}
           </span>
         </div>
-        {isActive && (
+        {hasThrow && (
           <img src="/dart.png" alt="" style={{
             position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
             width: 24, height: 24, objectFit: 'contain',
@@ -191,10 +191,10 @@ function TVScoreboard({
 
         {/* Score circles — positioned relative to board */}
         <div style={{ position: 'absolute', left: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p1Score} progress={p1Progress} color="red" isActive={activePlayer === 0} />
+          <ScoreCircle score={p1Score} progress={p1Progress} color="red" isActive={activePlayer === 0} hasThrow={hasTheThrow === 0} />
         </div>
         <div style={{ position: 'absolute', right: C.circX - circR2, top: '50%', transform: `translateY(calc(-50% + ${C.circY}px))`, zIndex: 4 }}>
-          <ScoreCircle score={p2Score} progress={p2Progress} color="blue" isActive={activePlayer === 1} />
+          <ScoreCircle score={p2Score} progress={p2Progress} color="blue" isActive={activePlayer === 1} hasThrow={hasTheThrow === 1} />
         </div>
       </div>
     </div>
@@ -293,6 +293,7 @@ export default function GamePage() {
             firstTo={match.config.numberOfLegs}
             hasSets={hasMultipleSets}
             activePlayer={game.currentPlayerIndex as 0 | 1}
+            hasTheThrow={((currentLeg.legNumber - 1) % 2) as 0 | 1}
             checkoutText={game.isCheckoutPossible && game.checkoutSuggestions.length > 0 
               ? game.checkoutSuggestions.slice(0, 2).map(s => s.combination).join(' | ')
               : undefined}
